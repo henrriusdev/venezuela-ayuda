@@ -51,7 +51,8 @@ export default async function Page({
         </div>
         <button
           type="submit"
-          className="w-full rounded-xl bg-violet-600 px-5 py-3.5 text-lg font-bold text-white active:scale-[0.99]"
+          className="min-h-[56px] w-full rounded-[15px] px-5 py-3.5 text-lg font-semibold text-white active:scale-[0.99]"
+          style={{ backgroundColor: "#2563a8" }}
         >
           Buscar
         </button>

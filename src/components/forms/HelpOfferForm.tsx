@@ -44,7 +44,7 @@ export default function HelpOfferForm() {
           {(Object.keys(OFFER_CATEGORIES) as Array<keyof typeof OFFER_CATEGORIES>).map((k) => (
             <label
               key={k}
-              className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-4 text-center font-semibold has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex cursor-pointer flex-col items-center gap-1 rounded-[15px] border border-[#e6ecf2] bg-white px-3 py-4 text-center font-semibold has-[:checked]:border-2 has-[:checked]:border-[#2f9e6e] has-[:checked]:bg-[#e9f6ef] has-[:checked]:text-[#1f7a52]"
             >
               <input type="radio" name="category" value={k} className="sr-only" />
               <span aria-hidden className="text-2xl">{OFFER_CATEGORIES[k].emoji}</span>

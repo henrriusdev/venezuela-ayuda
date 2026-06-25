@@ -113,6 +113,34 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
   return markers;
 }
 
+export interface Stats {
+  people: number;
+  requests: number;
+  helpers: number;
+}
+
+// Lightweight COUNT(*) for the landing strip. `head: true` fetches no rows.
+export async function getStats(): Promise<Stats> {
+  if (!isSupabaseConfigured()) return { people: 0, requests: 0, helpers: 0 };
+  const supabase = getServerSupabase();
+  const [people, requests, helpers] = await Promise.all([
+    supabase.from("public_checkins").select("id", { count: "exact", head: true }),
+    supabase
+      .from("public_help_requests")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "RESOLVED"),
+    supabase
+      .from("public_help_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("available", true),
+  ]);
+  return {
+    people: people.count ?? 0,
+    requests: requests.count ?? 0,
+    helpers: helpers.count ?? 0,
+  };
+}
+
 export async function listRequests(limit = 100): Promise<PublicHelpRequest[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getServerSupabase();

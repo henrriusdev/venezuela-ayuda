@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { submitHelpRequest, type ActionState } from "@/app/actions";
 import { HELP_CATEGORIES, URGENCY_LEVELS, LIMITS } from "@/lib/constants";
-import { Label, TextInput, TextArea, Select, FieldError, Honeypot } from "@/components/Field";
+import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
 import LocationPicker from "@/components/LocationPicker";
 import SubmitButton from "@/components/SubmitButton";
 import SuccessCard from "@/components/SuccessCard";
@@ -96,28 +96,39 @@ export default function HelpRequestForm() {
         </p>
       )}
 
-      <div>
-        <Label htmlFor="category" required>
-          Categoría
-        </Label>
-        <Select
-          id="category"
-          name="category"
-          required
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="" disabled>
-            Selecciona…
-          </option>
-          {(Object.keys(HELP_CATEGORIES) as Array<keyof typeof HELP_CATEGORIES>).map((k) => (
-            <option key={k} value={k}>
-              {HELP_CATEGORIES[k].emoji} {HELP_CATEGORIES[k].label}
-            </option>
-          ))}
-        </Select>
+      <fieldset>
+        <legend className="mb-2 block font-semibold text-slate-800">
+          ¿Qué necesitas? <span className="text-red-600">*</span>
+        </legend>
+        <div className="grid grid-cols-3 gap-2.5">
+          {(Object.keys(HELP_CATEGORIES) as Array<keyof typeof HELP_CATEGORIES>).map((k) => {
+            const on = category === k;
+            return (
+              <label
+                key={k}
+                className="flex cursor-pointer flex-col items-center gap-1.5 rounded-[15px] border bg-white px-2 py-4 text-center text-sm font-semibold"
+                style={
+                  on
+                    ? { borderColor: "#e2603a", backgroundColor: "#fdf0e9", color: "#c0512c", borderWidth: 2 }
+                    : { borderColor: "#e6ecf2" }
+                }
+              >
+                <input
+                  type="radio"
+                  name="category"
+                  value={k}
+                  checked={on}
+                  onChange={() => setCategory(k)}
+                  className="sr-only"
+                />
+                <span aria-hidden className="text-2xl">{HELP_CATEGORIES[k].emoji}</span>
+                {HELP_CATEGORIES[k].label}
+              </label>
+            );
+          })}
+        </div>
         <FieldError message={state.fieldErrors?.category} />
-      </div>
+      </fieldset>
 
       <div>
         <Label htmlFor="description" required>
@@ -138,27 +149,31 @@ export default function HelpRequestForm() {
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">Urgencia</legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(Object.keys(URGENCY_LEVELS) as Array<keyof typeof URGENCY_LEVELS>).map((k) => (
-            <label
-              key={k}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-3 font-semibold has-[:checked]:border-transparent has-[:checked]:text-white"
-              style={
-                urgency === k
-                  ? { backgroundColor: URGENCY_LEVELS[k].color, borderColor: "transparent", color: "#fff" }
-                  : undefined
-              }
-            >
-              <input
-                type="radio"
-                name="urgency"
-                value={k}
-                checked={urgency === k}
-                onChange={() => setUrgency(k)}
-                className="sr-only"
-              />
-              {URGENCY_LEVELS[k].label}
-            </label>
-          ))}
+          {(Object.keys(URGENCY_LEVELS) as Array<keyof typeof URGENCY_LEVELS>).map((k) => {
+            const u = URGENCY_LEVELS[k];
+            const on = urgency === k;
+            return (
+              <label
+                key={k}
+                className="flex cursor-pointer items-center justify-center rounded-xl border bg-white px-3 py-3 font-semibold"
+                style={
+                  on
+                    ? { backgroundColor: u.tintBg, color: u.color, borderColor: u.color, borderWidth: 2 }
+                    : { borderColor: "#e6ecf2", color: "#33414f" }
+                }
+              >
+                <input
+                  type="radio"
+                  name="urgency"
+                  value={k}
+                  checked={on}
+                  onChange={() => setUrgency(k)}
+                  className="sr-only"
+                />
+                {u.label}
+              </label>
+            );
+          })}
         </div>
         <FieldError message={state.fieldErrors?.urgency} />
       </fieldset>
@@ -195,7 +210,9 @@ export default function HelpRequestForm() {
         <LocationPicker />
       </div>
 
-      <SubmitButton pendingLabel="Enviando…">Enviar solicitud</SubmitButton>
+      <SubmitButton tone="emergency" pendingLabel="Enviando…">
+        Publicar solicitud
+      </SubmitButton>
     </form>
   );
 }

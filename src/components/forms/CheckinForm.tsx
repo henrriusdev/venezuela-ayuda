@@ -49,17 +49,17 @@ export default function CheckinForm() {
               return (
                 <label
                   key={key}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold has-[:checked]:border-[#2563a8] has-[:checked]:bg-[#eef3fa]"
                 >
                   <input
                     type="radio"
                     name="status"
                     value={key}
                     defaultChecked={i === 0}
-                    className="h-5 w-5"
+                    className="h-5 w-5 accent-[#2563a8]"
                   />
                   <span aria-hidden className="text-xl">{s.emoji}</span>
-                  <span style={{ color: s.color }}>{s.label}</span>
+                  <span style={{ color: s.tintText }}>{s.label}</span>
                 </label>
               );
             }
@@ -113,7 +113,9 @@ export default function CheckinForm() {
         <LocationPicker />
       </div>
 
-      <SubmitButton pendingLabel="Guardando…">Marcarme</SubmitButton>
+      <SubmitButton tone="safe" pendingLabel="Guardando…">
+        Registrar mi estado
+      </SubmitButton>
     </form>
   );
 }

@@ -8,11 +8,11 @@ import { getMapStyle } from "@/lib/mapStyle";
 import type { MapMarker, MarkerKind } from "@/lib/types";
 
 const KIND_META: Record<MarkerKind, { color: string; label: string; emoji: string }> = {
-  safe: { color: "#16a34a", label: "A salvo", emoji: "✅" },
-  needs_help: { color: "#dc2626", label: "Necesita ayuda", emoji: "🆘" },
-  looking: { color: "#7c3aed", label: "Busca a alguien", emoji: "🔎" },
-  request: { color: "#ea580c", label: "Solicitudes de ayuda", emoji: "🚨" },
-  offer: { color: "#2563eb", label: "Ofrece ayuda", emoji: "🙌" },
+  safe: { color: "#2f9e6e", label: "A salvo", emoji: "✅" },
+  needs_help: { color: "#c9483a", label: "Necesita ayuda", emoji: "🆘" },
+  looking: { color: "#b5811f", label: "Busca a alguien", emoji: "🔎" },
+  request: { color: "#e2603a", label: "Solicitudes de ayuda", emoji: "🚨" },
+  offer: { color: "#2563a8", label: "Ofrece ayuda", emoji: "🤝" },
 };
 const ALL_KINDS = Object.keys(KIND_META) as MarkerKind[];
 

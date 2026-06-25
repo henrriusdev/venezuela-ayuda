@@ -4,8 +4,8 @@ export default function StatusBadge({ status }: { status: CheckinStatus }) {
   const s = CHECKIN_STATUSES[status];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold text-white"
-      style={{ backgroundColor: s.color }}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold"
+      style={{ backgroundColor: s.tintBg, color: s.tintText }}
     >
       <span aria-hidden>{s.emoji}</span>
       {s.label}

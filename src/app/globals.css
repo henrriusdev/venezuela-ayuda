@@ -1,14 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f5f8fb;
+  --foreground: #14212e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Lexend (loaded via next/font) with a system fallback so text paints
+     instantly on slow connections. */
+  --font-sans: var(--font-lexend), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand palette (design system) */
+  --color-ink: #14212e;
+  --color-ink-soft: #5b6b7b;
+  --color-surface: #f5f8fb;
+  --color-line: #e6ecf2;
+  --color-action: #2563a8;
+  --color-emergency: #e2603a;
+  --color-safe: #2f9e6e;
+  --color-critical: #c9483a;
+  --color-whatsapp: #25d366;
 }
 
 html {
@@ -34,7 +47,7 @@ textarea {
 
 /* Visible focus for keyboard + accessibility. */
 :focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid #2563a8;
   outline-offset: 2px;
 }
 

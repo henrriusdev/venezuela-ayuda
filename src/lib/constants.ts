@@ -1,10 +1,12 @@
 // Shared domain constants. Spanish labels live here so the whole UI stays
 // consistent and translation is a single source of truth.
 
+// `pin` = solid color used on the map. `tintBg`/`tintText` = the soft-tint badge
+// style from the design system (calm, never saturated full-bleed).
 export const CHECKIN_STATUSES = {
-  SAFE: { label: "A salvo", color: "#16a34a", emoji: "✅" },
-  NEEDS_HELP: { label: "Necesita ayuda", color: "#dc2626", emoji: "🆘" },
-  LOOKING_FOR_SOMEONE: { label: "Busca a alguien", color: "#2563eb", emoji: "🔎" },
+  SAFE: { label: "A salvo", emoji: "✅", pin: "#2f9e6e", tintBg: "#eaf3ec", tintText: "#1f7a52" },
+  NEEDS_HELP: { label: "Necesita ayuda", emoji: "🆘", pin: "#e2603a", tintBg: "#fdf0e9", tintText: "#c05a32" },
+  LOOKING_FOR_SOMEONE: { label: "Busca a alguien", emoji: "🔎", pin: "#b5811f", tintBg: "#fff5e6", tintText: "#b5811f" },
 } as const;
 export type CheckinStatus = keyof typeof CHECKIN_STATUSES;
 
@@ -29,11 +31,13 @@ export const OFFER_CATEGORIES = {
 } as const;
 export type OfferCategory = keyof typeof OFFER_CATEGORIES;
 
+// Labels follow the design language (Normal / Importante / Urgente / Crítico);
+// the DB enum keys (LOW/MEDIUM/HIGH/CRITICAL) are unchanged.
 export const URGENCY_LEVELS = {
-  LOW: { label: "Baja", color: "#65a30d", weight: 1 },
-  MEDIUM: { label: "Media", color: "#ca8a04", weight: 2 },
-  HIGH: { label: "Alta", color: "#ea580c", weight: 3 },
-  CRITICAL: { label: "Crítica", color: "#dc2626", weight: 4 },
+  LOW: { label: "Normal", color: "#5b6b7b", tintBg: "#f0f3f7", weight: 1 },
+  MEDIUM: { label: "Importante", color: "#b5811f", tintBg: "#fff5e6", weight: 2 },
+  HIGH: { label: "Urgente", color: "#e2603a", tintBg: "#fdf0e9", weight: 3 },
+  CRITICAL: { label: "Crítico", color: "#c9483a", tintBg: "#fbe9e4", weight: 4 },
 } as const;
 export type UrgencyLevel = keyof typeof URGENCY_LEVELS;
 
@@ -43,6 +47,19 @@ export const REQUEST_STATUSES = {
   RESOLVED: { label: "Resuelta", color: "#16a34a" },
 } as const;
 export type RequestStatus = keyof typeof REQUEST_STATUSES;
+
+// Brand palette (design system). Calm, trustworthy, community — not alarmist.
+export const BRAND = {
+  ink: "#14212e",
+  inkSoft: "#5b6b7b",
+  surface: "#f5f8fb",
+  line: "#e6ecf2",
+  action: "#2563a8", // primary / trust
+  emergency: "#e2603a", // help requests
+  safe: "#2f9e6e", // safe / success
+  critical: "#c9483a",
+  whatsapp: "#25D366",
+} as const;
 
 // Map default view: roughly centered on Venezuela.
 export const VENEZUELA_CENTER = { lng: -66.9, lat: 10.0 };

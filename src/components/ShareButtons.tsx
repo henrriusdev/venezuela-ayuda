@@ -43,7 +43,8 @@ export default function ShareButtons({
         href={whatsappShareUrl(full)}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-3 font-bold text-white active:scale-[0.99]"
+        style={{ backgroundColor: "#25D366" }}
+        className="inline-flex items-center gap-2 rounded-xl px-4 py-3 font-bold text-white active:scale-[0.99]"
       >
         <span aria-hidden>💬</span> Compartir por WhatsApp
       </a>

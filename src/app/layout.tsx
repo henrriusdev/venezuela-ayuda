@@ -1,9 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Lexend } from "next/font/google";
 import "./globals.css";
 import ConnectivityLayer from "@/components/ConnectivityLayer";
 
-// No web fonts: system fonts render instantly with zero download — critical on
-// slow / metered connections.
+// Lexend is the design system's typeface. next/font self-hosts it (no runtime
+// request to Google) and `display: swap` paints system-font text immediately —
+// so the choice doesn't cost us anything on slow connections.
+const lexend = Lexend({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-lexend",
+});
 
 export const metadata: Metadata = {
   title: "Venezuela Ayuda — Coordinación de emergencia",
@@ -32,7 +40,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={lexend.variable}>
       <body className="min-h-dvh flex flex-col antialiased">
         <a
           href="#contenido"
