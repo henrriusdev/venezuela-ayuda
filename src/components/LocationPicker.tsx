@@ -14,8 +14,47 @@ export default function LocationPicker({ required = false }: { required?: boolea
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
+
+  // Geocode an address/place (OpenStreetMap Nominatim, keyless) and jump the
+  // pin there. Far easier than dragging the map across the whole country.
+  async function searchPlace() {
+    const q = query.trim();
+    if (q.length < 3) {
+      setSearchError("Escribe una dirección o lugar.");
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ve&q=${encodeURIComponent(
+          q
+        )}`,
+        { headers: { Accept: "application/json" } }
+      );
+      const arr = (await res.json()) as Array<{ lat: string; lon: string }>;
+      if (!Array.isArray(arr) || !arr.length) {
+        setSearchError("No encontramos ese lugar. Prueba con otra dirección.");
+        return;
+      }
+      const lat = +Number(arr[0].lat).toFixed(6);
+      const lng = +Number(arr[0].lon).toFixed(6);
+      setCoords({ lat, lng });
+      setOpen(true);
+      // If the map is already mounted, fly to it; otherwise the init effect
+      // centers on the new coords when the panel opens.
+      mapRef.current?.flyTo({ center: [lng, lat], zoom: 16 });
+    } catch {
+      setSearchError("No se pudo buscar. Revisa tu conexión.");
+    } finally {
+      setSearching(false);
+    }
+  }
 
   // Initialize the map only after the picker is opened.
   useEffect(() => {
@@ -81,6 +120,33 @@ export default function LocationPicker({ required = false }: { required?: boolea
     <div>
       <input type="hidden" name="latitude" value={coords?.lat ?? ""} readOnly />
       <input type="hidden" name="longitude" value={coords?.lng ?? ""} readOnly />
+
+      {/* Address / place search */}
+      <div className="mb-2 flex gap-2">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              searchPlace();
+            }
+          }}
+          placeholder="Buscar dirección o lugar…"
+          aria-label="Buscar dirección o lugar"
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
+        />
+        <button
+          type="button"
+          onClick={searchPlace}
+          disabled={searching}
+          className="shrink-0 rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-60"
+        >
+          {searching ? "…" : "Buscar"}
+        </button>
+      </div>
+      {searchError && <p className="mb-2 text-sm text-amber-700">{searchError}</p>}
 
       <div className="flex flex-wrap gap-2">
         <button
