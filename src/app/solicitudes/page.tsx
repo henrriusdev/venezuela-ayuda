@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import GuideInvitePopup from "@/components/GuideInvitePopup";
 import SourceBadge from "@/components/SourceBadge";
@@ -62,17 +63,25 @@ export default async function Page({
     limit: 60,
   });
 
+  const tr = await getTranslations("detail");
+  const tD = await getTranslations("domain");
+  const tc = await getTranslations("common");
+
   const fromOffer = sp.desde === "oferta";
-  const offerInfo = cat && cat in OFFER_CATEGORIES ? OFFER_CATEGORIES[cat as OfferCategory] : null;
+  const offerKey = cat && cat in OFFER_CATEGORIES ? (cat as OfferCategory) : null;
 
   const h1 = fromOffer
-    ? "🙌 ¡Gracias por ofrecer ayuda!"
-    : "🆘 Solicitudes de ayuda activas";
+    ? tr("requests.thanksTitle")
+    : tr("requests.activeTitle");
   const intro = fromOffer
-    ? `Estas personas necesitan ayuda cerca de ti. Si puedes atender una, ábrela y deja tu contacto.${
-        offerInfo ? ` Mostrando lo que puedes cubrir con ${offerInfo.label.toLowerCase()}.` : ""
+    ? `${tr("requests.introFromOffer")}${
+        offerKey
+          ? tr("requests.introFromOfferCovering", {
+              offer: tD(`offer.${offerKey}`).toLowerCase(),
+            })
+          : ""
       }`
-    : "Personas que pidieron ayuda. Encuentra una que puedas atender.";
+    : tr("requests.intro");
 
   return (
     <>
@@ -86,7 +95,7 @@ export default async function Page({
           href="/"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Volver al inicio
+          {tc("backHome")}
         </Link>
 
         <h1 className="mt-3 text-2xl font-extrabold text-slate-900">{h1}</h1>
@@ -102,7 +111,7 @@ export default async function Page({
                 : "bg-[#eef3fa] text-[#2563a8]"
             }`}
           >
-            Todas
+            {tr("requests.all")}
           </Link>
           {(Object.keys(HELP_CATEGORIES) as HelpCategory[]).map((key) => {
             const c = HELP_CATEGORIES[key];
@@ -120,7 +129,7 @@ export default async function Page({
                     : "bg-[#eef3fa] text-[#2563a8]"
                 }`}
               >
-                {c.emoji} {c.label}
+                {c.emoji} {tD(`category.${key}`)}
               </Link>
             );
           })}
@@ -135,8 +144,8 @@ export default async function Page({
           <input
             name="ciudad"
             defaultValue={ciudad}
-            placeholder="Filtra por ciudad"
-            aria-label="Ciudad"
+            placeholder={tr("requests.filterByCity")}
+            aria-label={tr("requests.cityAria")}
             maxLength={80}
             className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-base"
           />
@@ -144,7 +153,7 @@ export default async function Page({
             type="submit"
             className="shrink-0 rounded-xl bg-[#2563a8] px-5 py-2.5 font-semibold text-white active:scale-[0.99]"
           >
-            Filtrar
+            {tr("requests.filter")}
           </button>
         </form>
 
@@ -153,13 +162,13 @@ export default async function Page({
           {requests.length === 0 ? (
             <div className="rounded-2xl border border-[#e6ecf2] bg-white p-6 text-center text-[#5b6b7b]">
               <p className="font-semibold text-[#14212e]">
-                No hay solicitudes activas que coincidan.
+                {tr("requests.noResults")}
               </p>
               <Link
                 href="/necesito-ayuda"
                 className="mt-4 inline-block rounded-xl bg-[#2563a8] px-5 py-3 font-semibold text-white"
               >
-                Pedir ayuda
+                {tr("requests.askForHelp")}
               </Link>
             </div>
           ) : (
@@ -181,7 +190,7 @@ export default async function Page({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-[#14212e]">
-                        {r.place_name || c?.label}
+                        {r.place_name || (c ? tD(`category.${r.category}`) : undefined)}
                       </h2>
                       {urgency && (
                         <span
@@ -191,7 +200,7 @@ export default async function Page({
                             color: urgency.color,
                           }}
                         >
-                          {urgency.label}
+                          {tD(`urgency.${r.urgency}`)}
                         </span>
                       )}
                     </div>
@@ -199,11 +208,11 @@ export default async function Page({
                     <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8190a0]">
                       {c && (
                         <span className="rounded-full bg-[#eef3fa] px-2.5 py-1 font-medium text-[#2563a8]">
-                          {c.emoji} {c.label}
+                          {c.emoji} {tD(`category.${r.category}`)}
                         </span>
                       )}
                       {r.city && <span>📍 {r.city}</span>}
-                      {distance && <span>a {distance}</span>}
+                      {distance && <span>{tr("requests.distanceAway", { distance })}</span>}
                     </div>
 
                     {r.description && (

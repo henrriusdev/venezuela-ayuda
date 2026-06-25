@@ -1,0 +1,29 @@
+{
+  "title": "Buscar persona",
+  "intro": "Busca por nombre, edificio o ciudad para ver si alguien se reportó. ¿No la encuentras? Aquí también puedes reportarla como desaparecida.",
+  "nameOrBuilding": "Nombre o edificio",
+  "searchButton": "Buscar",
+  "galleryLink": "📸 ¿No sabes el nombre? Mira las fotos de personas desaparecidas →",
+  "promptTitle": "Escribe un nombre, edificio o ciudad para buscar.",
+  "promptPrivacy": "Por privacidad no mostramos un listado completo de personas.",
+  "promptNotListed": "¿Buscas a alguien que no aparece?",
+  "reportMissing": "Reportar a una persona como desaparecida",
+  "results": "{count, plural, one {# resultado} other {# resultados}}",
+  "resultsFor": " para “{q}”",
+  "resultsIn": " en {city}",
+  "noneTitle": "No encontramos a nadie todavía.",
+  "noneBody": "La persona quizá aún no se ha reportado. Comparte el enlace para que se marque a salvo.",
+  "peopleHeading": "Personas",
+  "placesHeading": "Lugares y solicitudes",
+  "updated": "Actualizado {time}",
+  "notFoundPrompt": "¿No lo encuentras?",
+  "reportSafe": "Repórtate a salvo",
+  "or": "o",
+  "seeMap": "mira el mapa",
+  "card": {
+    "place": "🏢 {place} · ",
+    "metaUpdated": "Actualizado {time}"
+  },
+  "sourcesIntro": "🌐 Incluye datos de esfuerzos ciudadanos aliados —",
+  "sourcesOutro": "y más — integrados y atribuidos automáticamente cada 6 horas. La información externa se muestra como «sin verificar»."
+}

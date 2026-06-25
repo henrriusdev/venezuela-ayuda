@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { useTranslations } from "next-intl";
 import PageShell from "@/components/PageShell";
 import HelpAbroadList from "@/components/HelpAbroadList";
 import { HELP_ABROAD_CITIES } from "@/lib/helpAbroad";
@@ -10,13 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
+  const t = useTranslations("abroad");
   return (
-    <PageShell
-      wide
-      emoji="🌍"
-      title="Quiero ayudar fuera de Venezuela"
-      intro="Busca tu ciudad y encuentra lugares donde sumarte como voluntario o llevar donaciones a un centro de acopio."
-    >
+    <PageShell wide emoji="🌍" title={t("title")} intro={t("intro")}>
       <HelpAbroadList cities={HELP_ABROAD_CITIES} />
     </PageShell>
   );

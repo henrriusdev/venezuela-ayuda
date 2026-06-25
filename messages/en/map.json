@@ -1,0 +1,21 @@
+{
+  "kind": {
+    "need": "Need help",
+    "missing": "Missing",
+    "helper": "Volunteers",
+    "center": "Collection centers",
+    "damaged": "Damaged buildings"
+  },
+  "popup": {
+    "confidence": "Confidence:",
+    "source": "Source:",
+    "directions": "Directions →",
+    "detail": "View details →"
+  },
+  "loading": "Loading map…",
+  "onMap": "{count} on the map",
+  "title": "🗺️ Help map",
+  "wantToHelp": "🤝 I want to help",
+  "askForHelp": "🆘 Ask for help",
+  "hint": "Tap a point to see details. Use the filters to show or hide categories."
+}

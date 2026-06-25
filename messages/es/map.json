@@ -1,0 +1,21 @@
+{
+  "kind": {
+    "need": "Necesitan ayuda",
+    "missing": "Desaparecidos",
+    "helper": "Voluntarios",
+    "center": "Centros de acopio",
+    "damaged": "Edificios dañados"
+  },
+  "popup": {
+    "confidence": "Confianza:",
+    "source": "Fuente:",
+    "directions": "Cómo llegar →",
+    "detail": "Ver detalle →"
+  },
+  "loading": "Cargando mapa…",
+  "onMap": "{count} en el mapa",
+  "title": "🗺️ Mapa de ayuda",
+  "wantToHelp": "🤝 Quiero ayudar",
+  "askForHelp": "🆘 Pedir ayuda",
+  "hint": "Toca un punto para ver detalles. Usa los filtros para mostrar u ocultar categorías."
+}

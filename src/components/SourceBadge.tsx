@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 // Attribution for records ingested from other community efforts. Links back to
 // the source and flags it as unverified.
 export default function SourceBadge({
@@ -9,7 +13,8 @@ export default function SourceBadge({
   url?: string | null;
   className?: string;
 }) {
-  const text = `🌐 Fuente: ${source} · sin verificar`;
+  const t = useTranslations("components.sourceBadge");
+  const text = t("text", { source });
   if (url) {
     return (
       <a

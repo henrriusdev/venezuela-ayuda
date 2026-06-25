@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { submitHelpOffer, type ActionState } from "@/app/actions";
 import { OFFER_CATEGORIES, LIMITS } from "@/lib/constants";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
@@ -12,16 +13,20 @@ const initial: ActionState = { ok: false };
 
 export default function HelpOfferForm() {
   const [state, action] = useActionState(submitHelpOffer, initial);
+  const t = useTranslations("forms.offer");
+  const tForms = useTranslations("forms");
+  const tCommon = useTranslations("common");
+  const tD = useTranslations("domain");
 
   if (state.ok) {
     return (
       <SuccessCard
-        title="¡Gracias por ofrecer ayuda!"
-        message="Tu oferta ya aparece en el mapa para quienes la necesitan."
-        shareText="🙌 Estoy ofreciendo ayuda en Venezuela Ayuda. Únete:"
+        title={t("successTitle")}
+        message={t("successMessage")}
+        shareText={t("successShare")}
         sharePath="/puedo-ayudar"
         primaryHref="/mapa"
-        primaryLabel="Ver en el mapa"
+        primaryLabel={t("viewMap")}
       />
     );
   }
@@ -38,7 +43,7 @@ export default function HelpOfferForm() {
 
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">
-          ¿Con qué puedes ayudar? <span className="text-red-600">*</span>
+          {t("categoryLegend")} <span className="text-red-600">*</span>
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {(Object.keys(OFFER_CATEGORIES) as Array<keyof typeof OFFER_CATEGORIES>).map((k) => (
@@ -48,7 +53,7 @@ export default function HelpOfferForm() {
             >
               <input type="radio" name="category" value={k} className="sr-only" />
               <span aria-hidden className="text-2xl">{OFFER_CATEGORIES[k].emoji}</span>
-              <span>{OFFER_CATEGORIES[k].label}</span>
+              <span>{tD("offer." + k)}</span>
             </label>
           ))}
         </div>
@@ -56,37 +61,37 @@ export default function HelpOfferForm() {
       </fieldset>
 
       <div>
-        <Label htmlFor="description" hint="(opcional)">
-          Detalles
+        <Label htmlFor="description" hint={tCommon("optional")}>
+          {t("detailsLabel")}
         </Label>
         <TextArea
           id="description"
           name="description"
           maxLength={LIMITS.description}
-          placeholder="Ej: Tengo camioneta y puedo trasladar personas o llevar suministros."
+          placeholder={t("detailsPlaceholder")}
         />
       </div>
 
       <div>
-        <Label htmlFor="availability" hint="(opcional)">
-          Disponibilidad
+        <Label htmlFor="availability" hint={tCommon("optional")}>
+          {t("availabilityLabel")}
         </Label>
         <TextInput
           id="availability"
           name="availability"
           maxLength={LIMITS.availability}
-          placeholder="Ej: Hoy de 2pm a 8pm"
+          placeholder={t("availabilityPlaceholder")}
         />
       </div>
 
       <div>
-        <Label htmlFor="city">Ciudad</Label>
-        <TextInput id="city" name="city" maxLength={LIMITS.city} placeholder="Ej: Valencia" />
+        <Label htmlFor="city">{tCommon("city")}</Label>
+        <TextInput id="city" name="city" maxLength={LIMITS.city} placeholder={t("cityPlaceholder")} />
       </div>
 
       <div>
-        <Label htmlFor="contact" hint="(privado, opcional)">
-          Contacto / WhatsApp
+        <Label htmlFor="contact" hint={tForms("privateOptional")}>
+          {t("contactLabel")}
         </Label>
         <TextInput
           id="contact"
@@ -94,17 +99,17 @@ export default function HelpOfferForm() {
           type="tel"
           inputMode="tel"
           maxLength={LIMITS.phone}
-          placeholder="Para coordinar la ayuda"
+          placeholder={t("contactPlaceholder")}
         />
-        <p className="mt-1 text-sm text-slate-500">🔒 No se muestra públicamente.</p>
+        <p className="mt-1 text-sm text-slate-500">{tForms("notShownPublicly")}</p>
       </div>
 
       <div>
-        <Label htmlFor="location">Ubicación</Label>
+        <Label htmlFor="location">{tForms("locationLabel")}</Label>
         <LocationPicker />
       </div>
 
-      <SubmitButton pendingLabel="Enviando…">Ofrecer ayuda</SubmitButton>
+      <SubmitButton pendingLabel={t("sending")}>{t("submit")}</SubmitButton>
     </form>
   );
 }

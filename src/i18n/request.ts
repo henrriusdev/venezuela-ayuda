@@ -7,11 +7,21 @@ import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "./config";
 // here when you add a messages/<locale>/<ns>.json pair.
 const NAMESPACES = [
   "common",
+  "domain",
   "header",
   "home",
   "donate",
   "emergency",
   "measures",
+  "search",
+  "map",
+  "create",
+  "detail",
+  "components",
+  "forms",
+  "abroad",
+  "gallery",
+  "risk",
 ] as const;
 
 // No i18n routing: the active locale comes from a cookie (set by the language

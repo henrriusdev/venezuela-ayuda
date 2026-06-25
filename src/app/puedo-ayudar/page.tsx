@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/PageShell";
 import HelpOfferForm from "@/components/forms/HelpOfferForm";
 
@@ -8,18 +9,19 @@ export const metadata: Metadata = {
   description: "Ofrece transporte, comida, refugio, atención médica, suministros o traducción.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations("create");
   return (
     <PageShell
       emoji="🙌"
-      title="Puedo ayudar"
-      intro="Ofrece lo que puedas. Tu oferta aparecerá en el mapa para quienes la necesitan."
+      title={t("canHelp.title")}
+      intro={t("canHelp.intro")}
     >
       <Link
         href="/solicitudes"
         className="mb-4 inline-block font-semibold text-[#2563a8]"
       >
-        🆘 O mira las solicitudes activas →
+        {t("canHelp.seeRequests")}
       </Link>
       <HelpOfferForm />
     </PageShell>

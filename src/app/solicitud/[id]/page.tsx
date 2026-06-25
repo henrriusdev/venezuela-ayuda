@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import ShareButtons from "@/components/ShareButtons";
 import SourceBadge from "@/components/SourceBadge";
@@ -47,8 +48,11 @@ export default async function Page({
   const r = await getHelpRequest(id);
   if (!r) notFound();
 
+  const tr = await getTranslations("detail");
+  const tD = await getTranslations("domain");
+
   const category = HELP_CATEGORIES[r.category];
-  const categoryLabel = category?.label ?? r.category;
+  const categoryLabel = category ? tD(`category.${r.category}`) : r.category;
   const title = r.place_name || categoryLabel;
   const urgency = URGENCY_LEVELS[r.urgency];
 
@@ -64,13 +68,12 @@ export default async function Page({
           href="/mapa"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Mapa
+          {tr("backMap")}
         </Link>
 
         {nuevo === "1" && (
           <p className="mt-3 rounded-xl bg-green-50 px-4 py-3 font-medium text-green-800">
-            ✅ ¡Listo! Publicamos tu solicitud. Comparte este enlace para
-            recibir ayuda.
+            {tr("request.createdOk")}
           </p>
         )}
 
@@ -82,7 +85,7 @@ export default async function Page({
                 className="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: "#eaf3ec", color: REQUEST_STATUSES.RESOLVED.color }}
               >
-                ✅ {REQUEST_STATUSES.RESOLVED.label}
+                ✅ {tD("requestStatus.RESOLVED")}
               </span>
             )}
           </div>
@@ -96,7 +99,7 @@ export default async function Page({
                 className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: urgency.tintBg, color: urgency.color }}
               >
-                {urgency.label}
+                {tD(`urgency.${r.urgency}`)}
               </span>
             )}
           </div>
@@ -110,7 +113,7 @@ export default async function Page({
           {r.items?.length ? (
             <div className="mt-5">
               <p className="mb-2 font-semibold text-slate-800">
-                🛠️ Herramientas necesarias
+                {tr("request.toolsNeeded")}
               </p>
               <ul className="grid gap-1 text-slate-700">
                 {r.items.map((item, i) => (
@@ -126,7 +129,7 @@ export default async function Page({
           {r.city && <p className="mt-4 text-slate-600">📍 {r.city}</p>}
 
           <p className="mt-4 text-sm text-slate-400" title={fullDate(r.created_at)}>
-            Actualizado {timeAgo(r.created_at)}
+            {tr("request.updated", { ago: timeAgo(r.created_at) })}
           </p>
 
           {r.source && (
@@ -136,7 +139,7 @@ export default async function Page({
           )}
 
           <div className="mt-6 border-t border-slate-100 pt-5">
-            <p className="mb-2 font-semibold text-slate-800">Comparte esta solicitud</p>
+            <p className="mb-2 font-semibold text-slate-800">{tr("request.shareThis")}</p>
             <ShareButtons text={shareText} url={url} compact />
           </div>
         </article>
@@ -153,9 +156,9 @@ export default async function Page({
           <div className="mt-6">
             {r.source ? (
               <section className="rounded-2xl border border-[#e6ecf2] bg-white p-4">
-                <h2 className="font-semibold text-[#14212e]">¿Puedes ayudar?</h2>
+                <h2 className="font-semibold text-[#14212e]">{tr("request.canHelpTitle")}</h2>
                 <p className="mt-1 text-sm text-[#5b6b7b]">
-                  Esta solicitud proviene de {r.source}. Contacta allí:
+                  {tr("request.fromSource", { source: r.source })}
                 </p>
                 <p className="mt-2">
                   <SourceBadge source={r.source} url={r.source_url} />
@@ -175,7 +178,7 @@ export default async function Page({
             href="/mapa"
             className="rounded-xl bg-slate-900 px-5 py-3.5 text-center font-bold text-white"
           >
-            Ver mapa de ayuda
+            {tr("request.viewMap")}
           </Link>
         </div>
       </main>

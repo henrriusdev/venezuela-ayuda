@@ -1,0 +1,16 @@
+{
+  "backHome": "← Home",
+  "heading": "🔍 Do you recognize someone?",
+  "intro": "These people were reported as missing. If you recognize someone, open their profile to help reconnect them with their family.",
+  "filterPlaceholder": "Filter by city",
+  "filterLabel": "Filter by city",
+  "filterSubmit": "Filter",
+  "emptyWithFilter": "No photos to show with that filter.",
+  "empty": "No photos to show.",
+  "previous": "← Previous",
+  "next": "Next →",
+  "footer": "We only show photo, name, and area. If you recognize someone, open their profile for more details.",
+  "connectivity": {
+    "offline": "📡 No connection — some data may not load. Your information will be sent when you reconnect."
+  }
+}

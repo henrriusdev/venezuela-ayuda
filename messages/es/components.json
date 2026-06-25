@@ -1,0 +1,67 @@
+{
+  "sightingForm": {
+    "needContactOrMessage": "Deja un contacto o un mensaje.",
+    "sendFailed": "No se pudo enviar. Intenta de nuevo.",
+    "doneTitle": "✅ Gracias. Enviamos tu aviso a quien reportó; te contactará pronto.",
+    "intro": "¿Reconoces a esta persona o la encontraste? Deja tus datos y un mensaje; se los haremos llegar a quien la reportó (tu información solo la verá esa persona).",
+    "openButton": "✋ La reconozco / La encontré",
+    "yourName": "Tu nombre",
+    "yourContact": "Tu contacto (teléfono)",
+    "phonePlaceholder": "Ej. +58 412 1234567",
+    "messagePlaceholder": "¿Dónde la viste? ¿Cómo está?",
+    "honeypotLabel": "No llenar este campo",
+    "sending": "Enviando…",
+    "submit": "Enviar aviso"
+  },
+  "sightingsInbox": {
+    "title": "Avisos recibidos ({count})",
+    "loadFailed": "No se pudieron cargar los avisos.",
+    "empty": "Aún no hay avisos.",
+    "anonymous": "Anónimo"
+  },
+  "requestResponseForm": {
+    "needContactOrMessage": "Deja un contacto o un mensaje.",
+    "sendFailed": "No se pudo enviar. Intenta de nuevo.",
+    "doneTitle": "✅ ¡Gracias! Enviamos tu ofrecimiento a quien lo solicitó; te contactará pronto.",
+    "intro": "¿Puedes cubrir esta necesidad? Deja tus datos y un mensaje; se los haremos llegar a quien la pidió (tu información solo la verá esa persona).",
+    "openButton": "🤝 Puedo ayudar con esto",
+    "yourName": "Tu nombre",
+    "yourContact": "Tu contacto (teléfono)",
+    "phonePlaceholder": "Ej. +58 412 1234567",
+    "messagePlaceholder": "¿Cómo puedes ayudar? ¿Cuándo estás disponible?",
+    "honeypotLabel": "No llenar este campo",
+    "sending": "Enviando…",
+    "submit": "Enviar ofrecimiento"
+  },
+  "requestResponsesInbox": {
+    "title": "Respuestas de voluntarios ({count})",
+    "loadFailed": "No se pudieron cargar las respuestas.",
+    "empty": "Aún no hay respuestas.",
+    "anonymous": "Anónimo"
+  },
+  "manageControls": {
+    "updateFailed": "No se pudo actualizar.",
+    "updateFailedRetry": "No se pudo actualizar. Intenta de nuevo.",
+    "checkinReopen": "Reabrir búsqueda",
+    "checkinResolve": "Marcar como encontrado/a",
+    "requestReopen": "Reabrir solicitud",
+    "requestResolve": "Marcar como resuelta",
+    "damagedReopen": "Reabrir reporte",
+    "damagedResolve": "Marcar como resuelto",
+    "saveLinkNotice": "🔑 Guarda tu enlace privado para gestionar este reporte (marcarlo como resuelto más tarde). No lo compartas.",
+    "copyManageLink": "Copiar enlace de gestión",
+    "saving": "Guardando…"
+  },
+  "shareButtons": {
+    "whatsapp": "Compartir por WhatsApp"
+  },
+  "sourceBadge": {
+    "text": "🌐 Fuente: {source} · sin verificar"
+  },
+  "guideInvitePopup": {
+    "title": "¡Gracias por sumarte!",
+    "body": "Descarga nuestra guía con más formas de ayudar a las víctimas del terremoto y cómo sumar a otras personas.",
+    "download": "📄 Descargar guía",
+    "notNow": "Ahora no"
+  }
+}

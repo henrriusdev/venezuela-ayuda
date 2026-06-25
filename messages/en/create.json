@@ -1,0 +1,23 @@
+{
+  "safe": {
+    "title": "I'm safe",
+    "intro": "Share your status to reassure your family. It only takes a moment."
+  },
+  "missing": {
+    "title": "Report a missing person",
+    "intro": "Give the name and last known location so others can help find them."
+  },
+  "needHelp": {
+    "title": "I need help",
+    "intro": "Describe what you need. It will appear on the map for rescuers and volunteers."
+  },
+  "canHelp": {
+    "title": "I can help",
+    "intro": "Offer whatever you can. Your offer will appear on the map for those who need it.",
+    "seeRequests": "🆘 Or see active requests →"
+  },
+  "report": {
+    "title": "Report a damaged building",
+    "intro": "Help map structural damage. Give the location and the severity."
+  }
+}

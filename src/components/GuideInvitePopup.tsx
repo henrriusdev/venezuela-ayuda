@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Brief modal shown right after a user submits any report, inviting them to
 // download the guide with more ways to help. Dismissible.
 export default function GuideInvitePopup() {
   const [open, setOpen] = useState(true);
+  const t = useTranslations("components.guideInvitePopup");
   if (!open) return null;
 
   return (
@@ -22,11 +24,10 @@ export default function GuideInvitePopup() {
       >
         <div aria-hidden className="text-4xl">🙌</div>
         <h2 id="guide-title" className="mt-2 text-xl font-bold text-[#14212e]">
-          ¡Gracias por sumarte!
+          {t("title")}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-[#5b6b7b]">
-          Descarga nuestra guía con más formas de ayudar a las víctimas del
-          terremoto y cómo sumar a otras personas.
+          {t("body")}
         </p>
         <a
           href="/Guia-para-sumar.pdf"
@@ -36,14 +37,14 @@ export default function GuideInvitePopup() {
           onClick={() => setOpen(false)}
           className="mt-4 block rounded-xl bg-[#2563a8] px-5 py-3.5 font-semibold text-white active:scale-[0.99]"
         >
-          📄 Descargar guía
+          {t("download")}
         </a>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="mt-2 block w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#5b6b7b]"
         >
-          Ahora no
+          {t("notNow")}
         </button>
       </div>
     </div>

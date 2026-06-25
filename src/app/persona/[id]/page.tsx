@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import StatusBadge from "@/components/StatusBadge";
 import SourceBadge from "@/components/SourceBadge";
@@ -43,8 +44,11 @@ export default async function Page({
   const c = await getCheckin(id);
   if (!c) notFound();
 
+  const tr = await getTranslations("detail");
+  const tD = await getTranslations("domain");
+
   const url = siteUrl(`/persona/${c.id}`);
-  const statusLabel = CHECKIN_STATUSES[c.status].label;
+  const statusLabel = tD(`checkinStatus.${c.status}`);
   const shareText = `${c.name} se reportó como "${statusLabel}" en Venezuela Ayuda.`;
 
   return (
@@ -56,12 +60,12 @@ export default async function Page({
           href="/buscar"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Buscar
+          {tr("backSearch")}
         </Link>
 
         {nuevo === "1" && (
           <p className="mt-3 rounded-xl bg-green-50 px-4 py-3 font-medium text-green-800">
-            ✅ ¡Listo! Guardamos tu reporte. Comparte este enlace con tu familia.
+            {tr("person.createdOk")}
           </p>
         )}
 
@@ -73,7 +77,7 @@ export default async function Page({
                 className="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: FOUND_BADGE.tintBg, color: FOUND_BADGE.tintText }}
               >
-                {FOUND_BADGE.emoji} {FOUND_BADGE.label}
+                {FOUND_BADGE.emoji} {tD("foundBadge")}
               </span>
             ) : (
               <StatusBadge status={c.status} />
@@ -84,7 +88,7 @@ export default async function Page({
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={c.photo_url}
-              alt={`Foto de ${c.name}`}
+              alt={tr("person.photoAlt", { name: c.name })}
               className="mt-4 max-h-80 w-full rounded-xl object-cover ring-1 ring-slate-200"
             />
           )}
@@ -94,7 +98,7 @@ export default async function Page({
 
           {c.found_at && (
             <p className="mt-2 text-sm font-medium text-green-700">
-              Reportado como encontrado/a el {fullDate(c.found_at)}
+              {tr("person.foundOn", { date: fullDate(c.found_at) })}
             </p>
           )}
 
@@ -105,7 +109,7 @@ export default async function Page({
           )}
 
           <p className="mt-4 text-sm text-slate-400" title={fullDate(c.created_at)}>
-            Actualizado {timeAgo(c.created_at)}
+            {tr("person.updated", { ago: timeAgo(c.created_at) })}
           </p>
 
           {c.source && (
@@ -115,7 +119,7 @@ export default async function Page({
           )}
 
           <div className="mt-6 border-t border-slate-100 pt-5">
-            <p className="mb-2 font-semibold text-slate-800">Comparte este reporte</p>
+            <p className="mb-2 font-semibold text-slate-800">{tr("person.shareThis")}</p>
             <ShareButtons text={shareText} url={url} compact />
           </div>
         </article>
@@ -135,11 +139,10 @@ export default async function Page({
             {c.source ? (
               <section className="rounded-2xl border border-[#e6ecf2] bg-white p-4">
                 <h2 className="font-semibold text-[#14212e]">
-                  ¿La reconoces o la encontraste?
+                  {tr("person.recognizeTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-[#5b6b7b]">
-                  Este reporte proviene de {c.source}. Contacta allí para dar
-                  información:
+                  {tr("person.recognizeFromSource", { source: c.source })}
                 </p>
                 <p className="mt-2">
                   <SourceBadge source={c.source} url={c.source_url} />
@@ -155,7 +158,7 @@ export default async function Page({
         )}
 
         <p className="mt-3 text-center text-xs text-slate-400">
-          🔒 Por privacidad, los teléfonos nunca se muestran en esta página.
+          {tr("person.phonePrivacy")}
         </p>
 
         <div className="mt-6 grid gap-2">
@@ -163,13 +166,13 @@ export default async function Page({
             href="/a-salvo"
             className="rounded-xl bg-green-600 px-5 py-3.5 text-center font-bold text-white"
           >
-            Marcarme a salvo yo también
+            {tr("person.markMeSafe")}
           </Link>
           <Link
             href="/mapa"
             className="rounded-xl bg-slate-900 px-5 py-3.5 text-center font-bold text-white"
           >
-            Ver mapa de ayuda
+            {tr("person.viewMap")}
           </Link>
         </div>
       </main>

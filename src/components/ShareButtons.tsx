@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { whatsappShareUrl } from "@/lib/share";
 
 // WhatsApp-first sharing. Falls back to the native share sheet and a
@@ -15,6 +16,8 @@ export default function ShareButtons({
   compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("components.shareButtons");
+  const tc = useTranslations("common");
   const full = `${text} ${url}`.trim();
 
   async function nativeShare() {
@@ -46,14 +49,14 @@ export default function ShareButtons({
         style={{ backgroundColor: "#25D366" }}
         className="inline-flex items-center gap-2 rounded-xl px-4 py-3 font-bold text-white active:scale-[0.99]"
       >
-        <span aria-hidden>💬</span> Compartir por WhatsApp
+        <span aria-hidden>💬</span> {t("whatsapp")}
       </a>
       <button
         type="button"
         onClick={copy}
         className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-3 font-bold text-slate-800 active:scale-[0.99]"
       >
-        <span aria-hidden>🔗</span> {copied ? "¡Copiado!" : "Copiar enlace"}
+        <span aria-hidden>🔗</span> {copied ? tc("copied") : tc("copyLink")}
       </button>
       {typeof navigator !== "undefined" && "share" in navigator && (
         <button
@@ -61,7 +64,7 @@ export default function ShareButtons({
           onClick={nativeShare}
           className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-3 font-bold text-slate-800 active:scale-[0.99]"
         >
-          <span aria-hidden>📤</span> Compartir
+          <span aria-hidden>📤</span> {tc("share")}
         </button>
       )}
     </div>

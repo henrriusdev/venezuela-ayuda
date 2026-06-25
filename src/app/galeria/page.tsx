@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import { getMissingWithPhotos } from "@/lib/data";
 
@@ -18,6 +19,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ ciudad?: string; page?: string }>;
 }) {
+  const t = await getTranslations("gallery");
   const sp = await searchParams;
   const ciudad = sp.ciudad?.trim() || undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
@@ -46,23 +48,20 @@ export default async function Page({
           href="/"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Inicio
+          {t("backHome")}
         </Link>
 
         <h1 className="mt-3 text-2xl font-extrabold text-slate-900">
-          🔍 ¿Reconoces a alguien?
+          {t("heading")}
         </h1>
-        <p className="mt-1 text-[#5b6b7b]">
-          Estas personas fueron reportadas como desaparecidas. Si reconoces a
-          alguien, abre su perfil para ayudar a reconectarla con su familia.
-        </p>
+        <p className="mt-1 text-[#5b6b7b]">{t("intro")}</p>
 
         <form method="get" className="mt-4 flex gap-2" role="search">
           <input
             name="ciudad"
             defaultValue={ciudad ?? ""}
-            placeholder="Filtrar por ciudad"
-            aria-label="Filtrar por ciudad"
+            placeholder={t("filterPlaceholder")}
+            aria-label={t("filterLabel")}
             maxLength={80}
             className="min-w-0 flex-1 rounded-xl border border-[#e6ecf2] bg-white px-4 py-2.5 text-base"
           />
@@ -70,15 +69,14 @@ export default async function Page({
             type="submit"
             className="shrink-0 rounded-xl bg-[#2563a8] px-5 py-2.5 font-semibold text-white active:scale-[0.99]"
           >
-            Filtrar
+            {t("filterSubmit")}
           </button>
         </form>
 
         {people.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-[#e6ecf2] bg-white p-6 text-center text-[#5b6b7b]">
             <p className="font-semibold text-[#14212e]">
-              No hay fotos para mostrar
-              {ciudad ? " con ese filtro" : ""}.
+              {ciudad ? t("emptyWithFilter") : t("empty")}
             </p>
           </div>
         ) : (
@@ -112,7 +110,7 @@ export default async function Page({
               href={`/galeria${qs(page - 1)}`}
               className="text-sm font-semibold text-[#2563a8]"
             >
-              ← Anteriores
+              {t("previous")}
             </Link>
           ) : (
             <span />
@@ -122,7 +120,7 @@ export default async function Page({
               href={`/galeria${qs(page + 1)}`}
               className="text-sm font-semibold text-[#2563a8]"
             >
-              Siguientes →
+              {t("next")}
             </Link>
           ) : (
             <span />
@@ -130,8 +128,7 @@ export default async function Page({
         </nav>
 
         <p className="mt-8 text-center text-xs text-[#8190a0]">
-          Solo mostramos foto, nombre y zona. Si reconoces a alguien, abre su
-          perfil para más detalles.
+          {t("footer")}
         </p>
       </main>
     </>

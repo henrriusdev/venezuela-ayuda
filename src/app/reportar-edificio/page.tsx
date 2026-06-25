@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/PageShell";
 import DamagedReportForm from "@/components/forms/DamagedReportForm";
 
@@ -6,12 +7,13 @@ export const metadata = {
   description: "Reporta daños estructurales en un edificio o lugar.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations("create");
   return (
     <PageShell
       emoji="🏚️"
-      title="Reportar edificio dañado"
-      intro="Ayuda a mapear los daños estructurales. Indica el lugar y la gravedad."
+      title={t("report.title")}
+      intro={t("report.intro")}
     >
       <DamagedReportForm />
     </PageShell>

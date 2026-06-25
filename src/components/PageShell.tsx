@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import Header from "@/components/Header";
 
 // Consistent inner-page chrome: header, a back link, a title and intro.
@@ -15,6 +16,7 @@ export default function PageShell({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const t = useTranslations("gallery");
   return (
     <>
       <Header />
@@ -26,7 +28,7 @@ export default function PageShell({
           href="/"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Inicio
+          {t("backHome")}
         </Link>
         <h1 className="mt-3 flex items-center gap-2 text-2xl font-extrabold text-slate-900">
           {emoji && <span aria-hidden>{emoji}</span>}

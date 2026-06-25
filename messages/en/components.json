@@ -1,0 +1,67 @@
+{
+  "sightingForm": {
+    "needContactOrMessage": "Leave a contact or a message.",
+    "sendFailed": "Could not send. Please try again.",
+    "doneTitle": "✅ Thank you. We sent your tip to the person who reported them; they'll contact you soon.",
+    "intro": "Do you recognize this person or did you find them? Leave your details and a message; we'll pass them to whoever reported them (only that person will see your information).",
+    "openButton": "✋ I recognize them / I found them",
+    "yourName": "Your name",
+    "yourContact": "Your contact (phone)",
+    "phonePlaceholder": "E.g. +58 412 1234567",
+    "messagePlaceholder": "Where did you see them? How are they?",
+    "honeypotLabel": "Do not fill this field",
+    "sending": "Sending…",
+    "submit": "Send tip"
+  },
+  "sightingsInbox": {
+    "title": "Tips received ({count})",
+    "loadFailed": "Could not load the tips.",
+    "empty": "No tips yet.",
+    "anonymous": "Anonymous"
+  },
+  "requestResponseForm": {
+    "needContactOrMessage": "Leave a contact or a message.",
+    "sendFailed": "Could not send. Please try again.",
+    "doneTitle": "✅ Thank you! We sent your offer to the person who requested it; they'll contact you soon.",
+    "intro": "Can you cover this need? Leave your details and a message; we'll pass them to whoever asked (only that person will see your information).",
+    "openButton": "🤝 I can help with this",
+    "yourName": "Your name",
+    "yourContact": "Your contact (phone)",
+    "phonePlaceholder": "E.g. +58 412 1234567",
+    "messagePlaceholder": "How can you help? When are you available?",
+    "honeypotLabel": "Do not fill this field",
+    "sending": "Sending…",
+    "submit": "Send offer"
+  },
+  "requestResponsesInbox": {
+    "title": "Volunteer responses ({count})",
+    "loadFailed": "Could not load the responses.",
+    "empty": "No responses yet.",
+    "anonymous": "Anonymous"
+  },
+  "manageControls": {
+    "updateFailed": "Could not update.",
+    "updateFailedRetry": "Could not update. Please try again.",
+    "checkinReopen": "Reopen search",
+    "checkinResolve": "Mark as found",
+    "requestReopen": "Reopen request",
+    "requestResolve": "Mark as resolved",
+    "damagedReopen": "Reopen report",
+    "damagedResolve": "Mark as resolved",
+    "saveLinkNotice": "🔑 Save your private link to manage this report (mark it resolved later). Do not share it.",
+    "copyManageLink": "Copy management link",
+    "saving": "Saving…"
+  },
+  "shareButtons": {
+    "whatsapp": "Share via WhatsApp"
+  },
+  "sourceBadge": {
+    "text": "🌐 Source: {source} · unverified"
+  },
+  "guideInvitePopup": {
+    "title": "Thank you for joining in!",
+    "body": "Download our guide with more ways to help earthquake victims and how to bring others on board.",
+    "download": "📄 Download guide",
+    "notNow": "Not now"
+  }
+}

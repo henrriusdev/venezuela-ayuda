@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import ShareButtons from "@/components/ShareButtons";
 import SourceBadge from "@/components/SourceBadge";
@@ -37,6 +38,9 @@ export default async function Page({
   const r = await getDamagedReport(id);
   if (!r) notFound();
 
+  const tr = await getTranslations("detail");
+  const tD = await getTranslations("domain");
+
   const severity = DAMAGE_SEVERITY[r.severity];
   const url = siteUrl(`/edificio/${r.id}`);
   const shareText = `🏚️ Reporte de edificio dañado en Venezuela Ayuda`;
@@ -50,12 +54,12 @@ export default async function Page({
           href="/mapa"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
         >
-          ← Mapa
+          {tr("backMap")}
         </Link>
 
         {nuevo === "1" && (
           <p className="mt-3 rounded-xl bg-green-50 px-4 py-3 font-medium text-green-800">
-            ✅ ¡Listo! Publicamos tu reporte.
+            {tr("building.createdOk")}
           </p>
         )}
 
@@ -67,7 +71,7 @@ export default async function Page({
                 className="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: "#eaf3ec", color: REQUEST_STATUSES.RESOLVED.color }}
               >
-                ✅ {REQUEST_STATUSES.RESOLVED.label}
+                ✅ {tD("requestStatus.RESOLVED")}
               </span>
             )}
           </div>
@@ -78,7 +82,7 @@ export default async function Page({
                 className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
                 style={{ backgroundColor: severity.tintBg, color: severity.color }}
               >
-                {severity.label}
+                {tD(`severity.${r.severity}`)}
               </span>
             )}
           </div>
@@ -110,11 +114,11 @@ export default async function Page({
           {r.city && <p className="mt-4 text-slate-600">📍 {r.city}</p>}
 
           <p className="mt-4 text-sm text-slate-400" title={fullDate(r.created_at)}>
-            Actualizado {timeAgo(r.created_at)}
+            {tr("building.updated", { ago: timeAgo(r.created_at) })}
           </p>
 
           <p className="mt-4 text-sm text-slate-500">
-            ⚠️ Reporte de la comunidad, sin verificación oficial.
+            {tr("building.communityNote")}
           </p>
 
           {r.source && (
@@ -124,7 +128,7 @@ export default async function Page({
           )}
 
           <div className="mt-6 border-t border-slate-100 pt-5">
-            <p className="mb-2 font-semibold text-slate-800">Comparte este reporte</p>
+            <p className="mb-2 font-semibold text-slate-800">{tr("building.shareThis")}</p>
             <ShareButtons text={shareText} url={url} compact />
           </div>
         </article>
@@ -142,7 +146,7 @@ export default async function Page({
             href="/mapa"
             className="rounded-xl bg-slate-900 px-5 py-3.5 text-center font-bold text-white"
           >
-            Ver mapa de ayuda
+            {tr("building.viewMap")}
           </Link>
         </div>
       </main>

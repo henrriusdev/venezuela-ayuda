@@ -1,0 +1,29 @@
+{
+  "title": "Find a person",
+  "intro": "Search by name, building or city to see if someone has checked in. Can't find them? You can also report them as missing here.",
+  "nameOrBuilding": "Name or building",
+  "searchButton": "Search",
+  "galleryLink": "📸 Don't know the name? Look through the photos of missing people →",
+  "promptTitle": "Type a name, building or city to search.",
+  "promptPrivacy": "For privacy reasons we don't show a full list of people.",
+  "promptNotListed": "Looking for someone who isn't listed?",
+  "reportMissing": "Report a person as missing",
+  "results": "{count, plural, one {# result} other {# results}}",
+  "resultsFor": " for “{q}”",
+  "resultsIn": " in {city}",
+  "noneTitle": "We haven't found anyone yet.",
+  "noneBody": "They may not have checked in yet. Share the link so they can mark themselves safe.",
+  "peopleHeading": "People",
+  "placesHeading": "Places and requests",
+  "updated": "Updated {time}",
+  "notFoundPrompt": "Can't find them?",
+  "reportSafe": "Mark yourself safe",
+  "or": "or",
+  "seeMap": "see the map",
+  "card": {
+    "place": "🏢 {place} · ",
+    "metaUpdated": "Updated {time}"
+  },
+  "sourcesIntro": "🌐 Includes data from allied citizen efforts —",
+  "sourcesOutro": "and more — integrated and attributed automatically every 6 hours. External information is shown as \"unverified\"."
+}

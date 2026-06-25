@@ -1,0 +1,48 @@
+{
+  "instructions": "Responde todas las preguntas. Si no estás seguro, elige “No sé”.",
+  "sectionSevere": "Señales graves",
+  "sectionMinor": "Señales menores",
+  "toggle": "¿Responder cuestionario de riesgo?",
+  "questions": {
+    "R1": "¿Alguna parte del edificio se cayó o se desprendió (techo, piso, escalera, balcón, pared, columna)?",
+    "R2": "¿El edificio o algún piso se ve inclinado, torcido o ladeado; puertas/ventanas en diagonal; un lado más hundido?",
+    "R3": "¿Las columnas que sostienen el edificio tienen grietas (no las paredes ni los frisos)?",
+    "R4": "¿Alguna columna tiene grietas en X o diagonales, concreto reventado, o cabillas expuestas o dobladas?",
+    "R5": "¿La planta baja se ve más dañada, aplastada o más baja que los pisos de arriba (piso blando)?",
+    "R6": "¿Hay grietas grandes donde las columnas se unen con el techo o las vigas?",
+    "R7": "¿Algún piso o techo se ve hundido, pandeado o caído, o ya no está a nivel?",
+    "R8": "¿El edificio chocó con el vecino y quedó dañado en la unión, o se separó dejando una abertura?",
+    "R9": "¿Hay grietas grandes en el suelo, hundimiento/levantamiento del terreno, o ladera con deslizamiento?",
+    "R10": "¿Hay tanques de agua, paredes, parapetos, vidrios, fachada o balcones a punto de caerse?",
+    "A1": "¿Hay grietas solo en paredes, frisos o tabiques (no en columnas ni estructura)?",
+    "A2": "¿Hay puertas o ventanas que antes abrían bien y ahora están trancadas?",
+    "A3": "¿Se cayeron lámparas, frisos, cerámica, cornisas o cielo raso?",
+    "A4": "¿Hay daños que no sabe si son graves, o no pudo ver bien las columnas y la estructura?"
+  },
+  "answers": {
+    "si": "Sí",
+    "no": "No",
+    "nose": "No sé"
+  },
+  "levels": {
+    "ROJO": {
+      "title": "Riesgo — Peligro",
+      "heading": "No entre ni permanezca en el edificio.",
+      "body": "Se detectaron señales de daño estructural grave. Salga de inmediato si está dentro y no vuelva a entrar, ni siquiera para sacar cosas. Aléjese también de la fachada y la acera por riesgo de caídas. Avise a sus vecinos. Reportamos este edificio para que un ingeniero lo revise."
+    },
+    "AMARILLO": {
+      "title": "Riesgo — Precaución",
+      "heading": "No se confirmó que el edificio sea seguro.",
+      "body": "Hay daños o señales que requieren revisión. No use el edificio normalmente y evite las zonas dañadas mientras continúen las réplicas. Un ingeniero debe revisarlo antes de volver a habitarlo. Reportamos este edificio para revisión.",
+      "priority": "Revisión prioritaria"
+    },
+    "NINGUNA": {
+      "title": "Sin señales graves observadas",
+      "heading": "No se observaron señales graves, pero esto NO es una inspección.",
+      "body": "Una revisión rápida desde afuera puede no ver daños internos u ocultos. Mantenga precaución durante las réplicas. Solo un ingeniero puede confirmar que el edificio es seguro."
+    }
+  },
+  "disclaimer": "Esta herramienta es una guía comunitaria de orientación, no una inspección profesional y no garantiza la seguridad de ningún edificio. Ante la duda, no entre. La decisión final corresponde a un ingeniero estructural.",
+  "needHelp": "Necesito ayuda",
+  "viewMap": "Ver en el mapa"
+}

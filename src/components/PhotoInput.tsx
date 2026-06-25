@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Optional photo picker. Downscales the image IN THE BROWSER before it ever
 // touches the network — a 4 MB phone photo becomes ~150-300 KB, which matters on
@@ -45,14 +46,16 @@ async function downscale(file: File): Promise<string> {
 }
 
 export default function PhotoInput({
-  label = "Foto (opcional)",
+  label,
 }: {
   label?: string;
 }) {
+  const t = useTranslations("forms.photo");
   const [preview, setPreview] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const labelText = label ?? t("defaultLabel");
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -63,7 +66,7 @@ export default function PhotoInput({
       const dataUrl = await downscale(file);
       setPreview(dataUrl);
     } catch {
-      setError("No pudimos procesar esa imagen. Intenta con otra foto.");
+      setError(t("processError"));
       setPreview("");
     } finally {
       setBusy(false);
@@ -78,7 +81,7 @@ export default function PhotoInput({
 
   return (
     <div>
-      <span className="mb-1.5 block font-semibold text-slate-800">{label}</span>
+      <span className="mb-1.5 block font-semibold text-slate-800">{labelText}</span>
 
       {/* Hidden field the server reads. */}
       <input type="hidden" name="photo_data" value={preview} readOnly />
@@ -86,7 +89,7 @@ export default function PhotoInput({
       {!preview ? (
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-700 active:scale-[0.99]">
           <span aria-hidden>📷</span>
-          {busy ? "Procesando…" : "Agregar foto"}
+          {busy ? t("processing") : t("add")}
           <input
             ref={fileRef}
             type="file"
@@ -100,7 +103,7 @@ export default function PhotoInput({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
-            alt="Vista previa"
+            alt={t("preview")}
             className="h-24 w-24 rounded-xl object-cover ring-1 ring-slate-300"
           />
           <button
@@ -108,15 +111,13 @@ export default function PhotoInput({
             onClick={clear}
             className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700"
           >
-            Quitar foto
+            {t("remove")}
           </button>
         </div>
       )}
 
       {error && <p className="mt-1 text-sm text-amber-700">{error}</p>}
-      <p className="mt-1 text-sm text-slate-500">
-        Ayuda a identificar a la persona. La foto será pública en el reporte.
-      </p>
+      <p className="mt-1 text-sm text-slate-500">{t("note")}</p>
     </div>
   );
 }

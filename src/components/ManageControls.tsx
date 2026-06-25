@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   markCheckinFound,
   resolveHelpRequest,
@@ -26,6 +27,8 @@ export default function ManageControls({
   isNew?: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("components.manageControls");
+  const tc = useTranslations("common");
   const [token, setToken] = useState<string | null>(urlToken ?? null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,10 +82,10 @@ export default function ManageControls({
       if (result.ok) {
         router.refresh();
       } else {
-        setError(result.error ?? "No se pudo actualizar.");
+        setError(result.error ?? t("updateFailed"));
       }
     } catch {
-      setError("No se pudo actualizar. Intenta de nuevo.");
+      setError(t("updateFailedRetry"));
     } finally {
       setPending(false);
     }
@@ -91,23 +94,22 @@ export default function ManageControls({
   const actionLabel =
     kind === "checkin"
       ? resolved
-        ? "Reabrir búsqueda"
-        : "Marcar como encontrado/a"
+        ? t("checkinReopen")
+        : t("checkinResolve")
       : kind === "request"
         ? resolved
-          ? "Reabrir solicitud"
-          : "Marcar como resuelta"
+          ? t("requestReopen")
+          : t("requestResolve")
         : resolved
-          ? "Reabrir reporte"
-          : "Marcar como resuelto";
+          ? t("damagedReopen")
+          : t("damagedResolve");
 
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
       {isNew && token && (
         <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
           <p className="font-bold text-amber-900">
-            🔑 Guarda tu enlace privado para gestionar este reporte (marcarlo
-            como resuelto más tarde). No lo compartas.
+            {t("saveLinkNotice")}
           </p>
           <button
             type="button"
@@ -115,7 +117,7 @@ export default function ManageControls({
             className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-200 px-4 py-3 font-bold text-amber-900 active:scale-[0.99]"
           >
             <span aria-hidden>🔗</span>{" "}
-            {copied ? "¡Copiado!" : "Copiar enlace de gestión"}
+            {copied ? tc("copied") : t("copyManageLink")}
           </button>
         </div>
       )}
@@ -136,7 +138,7 @@ export default function ManageControls({
               : "text-white"
           }`}
         >
-          {pending ? "Guardando…" : actionLabel}
+          {pending ? t("saving") : actionLabel}
         </button>
       )}
 

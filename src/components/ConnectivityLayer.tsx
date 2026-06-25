@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Registers the service worker and shows a thin banner when the device goes
 // offline, so users on flaky connections understand why things may stall.
 export default function ConnectivityLayer() {
+  const t = useTranslations("gallery");
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function ConnectivityLayer() {
       role="status"
       className="sticky top-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-white"
     >
-      📡 Sin conexión — algunos datos pueden no cargar. Tu información se enviará al reconectar.
+      {t("connectivity.offline")}
     </div>
   );
 }

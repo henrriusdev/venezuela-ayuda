@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { submitCheckin, type ActionState } from "@/app/actions";
 import { CHECKIN_STATUSES, LIMITS, type CheckinStatus } from "@/lib/constants";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
@@ -18,6 +19,10 @@ export default function CheckinForm({
   const [state, action] = useActionState(submitCheckin, initial);
   const [status, setStatus] = useState<CheckinStatus>(initialStatus ?? "SAFE");
   const isMissing = status === "LOOKING_FOR_SOMEONE";
+  const t = useTranslations("forms");
+  const tc = useTranslations("forms.checkin");
+  const tCommon = useTranslations("common");
+  const tD = useTranslations("domain");
 
   return (
     <form action={action} className="space-y-5">
@@ -31,7 +36,7 @@ export default function CheckinForm({
 
       <div>
         <Label htmlFor="name" required>
-          {isMissing ? "Nombre de la persona desaparecida" : "Tu nombre"}
+          {isMissing ? tc("missingName") : tc("yourName")}
         </Label>
         <TextInput
           id="name"
@@ -40,14 +45,14 @@ export default function CheckinForm({
           maxLength={LIMITS.name}
           autoComplete="name"
           enterKeyHint="next"
-          placeholder={isMissing ? "Ej: María Rodríguez" : "Ej: Carlos Pérez"}
+          placeholder={isMissing ? tc("missingNamePlaceholder") : tc("yourNamePlaceholder")}
         />
         <FieldError message={state.fieldErrors?.name} />
       </div>
 
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">
-          ¿Cuál es tu situación? <span className="text-red-600">*</span>
+          {tc("situationLegend")} <span className="text-red-600">*</span>
         </legend>
         <div className="grid gap-2">
           {(Object.keys(CHECKIN_STATUSES) as Array<keyof typeof CHECKIN_STATUSES>).map(
@@ -67,7 +72,7 @@ export default function CheckinForm({
                     className="h-5 w-5 accent-[#2563a8]"
                   />
                   <span aria-hidden className="text-xl">{s.emoji}</span>
-                  <span style={{ color: s.tintText }}>{s.label}</span>
+                  <span style={{ color: s.tintText }}>{tD("checkinStatus." + key)}</span>
                 </label>
               );
             }
@@ -78,31 +83,32 @@ export default function CheckinForm({
 
       <div>
         <Label htmlFor="place_name">
-          Edificio o lugar <span className="font-normal text-slate-500">(opcional)</span>
+          {tc("placeLabel")}{" "}
+          <span className="font-normal text-slate-500">{tCommon("optional")}</span>
         </Label>
         <TextInput
           id="place_name"
           name="place_name"
           maxLength={LIMITS.place_name}
           placeholder={
-            isMissing ? "Ej: Edificio donde se le vio" : "Ej: Residencias El Parque"
+            isMissing ? tc("missingPlacePlaceholder") : tc("placePlaceholder")
           }
         />
       </div>
 
       <div>
-        <Label htmlFor="city">Ciudad</Label>
+        <Label htmlFor="city">{tCommon("city")}</Label>
         <TextInput
           id="city"
           name="city"
           maxLength={LIMITS.city}
-          placeholder="Ej: Barquisimeto"
+          placeholder={tc("cityPlaceholder")}
         />
       </div>
 
       <div>
-        <Label htmlFor="message" hint="(opcional)">
-          Mensaje
+        <Label htmlFor="message" hint={tCommon("optional")}>
+          {tCommon("message")}
         </Label>
         <TextArea
           id="message"
@@ -110,15 +116,15 @@ export default function CheckinForm({
           maxLength={LIMITS.message}
           placeholder={
             isMissing
-              ? "Detalles: edad, contextura, ropa, dónde se le vio por última vez"
-              : "Ej: Estoy bien con mi familia."
+              ? tc("missingMessagePlaceholder")
+              : tc("messagePlaceholder")
           }
         />
       </div>
 
       <div>
-        <Label htmlFor="phone" hint="(privado, no se muestra)">
-          {isMissing ? "Tu contacto (privado)" : "Teléfono / WhatsApp"}
+        <Label htmlFor="phone" hint={t("privateNotShown")}>
+          {isMissing ? tc("missingContactLabel") : tc("phoneLabel")}
         </Label>
         <TextInput
           id="phone"
@@ -127,34 +133,32 @@ export default function CheckinForm({
           inputMode="tel"
           maxLength={LIMITS.phone}
           autoComplete="tel"
-          placeholder="Ej: 0414 1234567"
+          placeholder={tc("phonePlaceholder")}
         />
-        <p className="mt-1 text-sm text-slate-500">
-          🔒 Nunca mostramos tu teléfono públicamente.
-        </p>
+        <p className="mt-1 text-sm text-slate-500">{tc("phoneNote")}</p>
       </div>
 
       <div>
         <PhotoInput
-          label={isMissing ? "Foto de la persona (opcional)" : "Foto (opcional)"}
+          label={isMissing ? tc("missingPhotoLabel") : tc("photoLabel")}
         />
       </div>
 
       <div>
         <Label htmlFor="location" required={status !== "SAFE"}>
-          {isMissing ? "Última ubicación conocida" : "Ubicación"}
+          {isMissing ? tc("missingLocationLabel") : tc("locationLabel")}
         </Label>
         <LocationPicker required={status !== "SAFE"} />
         <FieldError message={state.fieldErrors?.location} />
       </div>
 
       {isMissing ? (
-        <SubmitButton tone="action" pendingLabel="Guardando…">
-          Publicar reporte
+        <SubmitButton tone="action" pendingLabel={tc("saving")}>
+          {tc("submitMissing")}
         </SubmitButton>
       ) : (
-        <SubmitButton tone="safe" pendingLabel="Guardando…">
-          Registrar mi estado
+        <SubmitButton tone="safe" pendingLabel={tc("saving")}>
+          {tc("submitSafe")}
         </SubmitButton>
       )}
     </form>

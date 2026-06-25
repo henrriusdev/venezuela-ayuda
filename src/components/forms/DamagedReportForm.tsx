@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { submitDamagedReport, type ActionState } from "@/app/actions";
 import {
   DAMAGE_SEVERITY,
@@ -22,6 +23,11 @@ export default function DamagedReportForm() {
   const [severity, setSeverity] = useState("");
   const [riskOpen, setRiskOpen] = useState(false);
   const [answers, setAnswers] = useState<Record<string, RiskAnswer>>({});
+  const t = useTranslations("forms.damaged");
+  const tForms = useTranslations("forms");
+  const tCommon = useTranslations("common");
+  const tD = useTranslations("domain");
+  const tRisk = useTranslations("risk");
 
   return (
     <form action={action} className="space-y-5">
@@ -35,20 +41,20 @@ export default function DamagedReportForm() {
 
       <div>
         <Label htmlFor="place_name" required>
-          Nombre del edificio o lugar
+          {t("placeLabel")}
         </Label>
         <TextInput
           id="place_name"
           name="place_name"
           maxLength={LIMITS.place_name}
-          placeholder="Ej: Residencias El Parque"
+          placeholder={t("placePlaceholder")}
         />
         <FieldError message={state.fieldErrors?.place_name} />
       </div>
 
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">
-          Gravedad del daño <span className="text-red-600">*</span>
+          {t("severityLegend")} <span className="text-red-600">*</span>
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {(Object.keys(DAMAGE_SEVERITY) as Array<keyof typeof DAMAGE_SEVERITY>).map((k) => {
@@ -72,7 +78,7 @@ export default function DamagedReportForm() {
                   onChange={() => setSeverity(k)}
                   className="sr-only"
                 />
-                {s.label}
+                {tD("severity." + k)}
               </label>
             );
           })}
@@ -85,8 +91,8 @@ export default function DamagedReportForm() {
         <input type="hidden" name="risk_enabled" value={riskOpen ? "1" : "0"} />
         <div className="flex items-center justify-between gap-3">
           <span id="risk-toggle-label" className="font-semibold text-slate-800">
-            ¿Responder cuestionario de riesgo?{" "}
-            <span className="font-normal text-slate-500">(opcional)</span>
+            {tRisk("toggle")}{" "}
+            <span className="font-normal text-slate-500">{tCommon("optional")}</span>
           </span>
           <button
             type="button"
@@ -106,18 +112,16 @@ export default function DamagedReportForm() {
 
         {riskOpen && (
           <div className="mt-4 space-y-6">
-            <p className="text-sm text-slate-500">
-              Responde todas las preguntas. Si no estás seguro, elige “No sé”.
-            </p>
+            <p className="text-sm text-slate-500">{tRisk("instructions")}</p>
 
             <RiskSection
-              legend="Señales graves"
+              legend={tRisk("sectionSevere")}
               questions={RISK_QUESTIONS_SEVERE}
               answers={answers}
               onAnswer={(id, v) => setAnswers((a) => ({ ...a, [id]: v }))}
             />
             <RiskSection
-              legend="Señales menores"
+              legend={tRisk("sectionMinor")}
               questions={RISK_QUESTIONS_MINOR}
               answers={answers}
               onAnswer={(id, v) => setAnswers((a) => ({ ...a, [id]: v }))}
@@ -129,25 +133,25 @@ export default function DamagedReportForm() {
       </div>
 
       <div>
-        <Label htmlFor="description" hint="(opcional)">
-          Describe el daño
+        <Label htmlFor="description" hint={tCommon("optional")}>
+          {t("descriptionLabel")}
         </Label>
         <TextArea
           id="description"
           name="description"
           maxLength={LIMITS.description}
-          placeholder="Ej: Grietas grandes en columnas del 3er piso"
+          placeholder={t("descriptionPlaceholder")}
         />
       </div>
 
       <div>
-        <Label htmlFor="city">Ciudad</Label>
+        <Label htmlFor="city">{tCommon("city")}</Label>
         <TextInput id="city" name="city" maxLength={LIMITS.city} />
       </div>
 
       <div>
-        <Label htmlFor="contact" hint="(opcional)">
-          Tu contacto (privado)
+        <Label htmlFor="contact" hint={tCommon("optional")}>
+          {t("contactLabel")}
         </Label>
         <TextInput
           id="contact"
@@ -156,21 +160,21 @@ export default function DamagedReportForm() {
           inputMode="tel"
           maxLength={LIMITS.phone}
         />
-        <p className="mt-1 text-sm text-slate-500">🔒 No se muestra públicamente.</p>
+        <p className="mt-1 text-sm text-slate-500">{tForms("notShownPublicly")}</p>
       </div>
 
-      <PhotoInput label="Foto del daño (opcional)" />
+      <PhotoInput label={t("photoLabel")} />
 
       <div>
         <Label htmlFor="location" required>
-          Ubicación
+          {t("locationLabel")}
         </Label>
         <LocationPicker required />
         <FieldError message={state.fieldErrors?.location} />
       </div>
 
-      <SubmitButton tone="emergency" pendingLabel="Enviando…">
-        Publicar reporte
+      <SubmitButton tone="emergency" pendingLabel={t("sending")}>
+        {t("submit")}
       </SubmitButton>
     </form>
   );
@@ -187,6 +191,7 @@ function RiskSection({
   answers: Record<string, RiskAnswer>;
   onAnswer: (id: string, value: RiskAnswer) => void;
 }) {
+  const t = useTranslations("risk");
   return (
     <fieldset className="space-y-3">
       <legend className="mb-1 text-sm font-bold uppercase tracking-wide text-slate-500">
@@ -194,7 +199,7 @@ function RiskSection({
       </legend>
       {questions.map((q) => (
         <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-3">
-          <p className="font-medium text-slate-800">{q.text}</p>
+          <p className="font-medium text-slate-800">{t("questions." + q.id)}</p>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {RISK_ANSWERS.map((opt) => {
               const on = answers[q.id] === opt.value;
@@ -216,7 +221,7 @@ function RiskSection({
                     onChange={() => onAnswer(q.id, opt.value)}
                     className="sr-only"
                   />
-                  {opt.label}
+                  {t("answers." + opt.value)}
                 </label>
               );
             })}

@@ -1,0 +1,48 @@
+{
+  "instructions": "Answer every question. If you are not sure, choose “Don't know”.",
+  "sectionSevere": "Severe signs",
+  "sectionMinor": "Minor signs",
+  "toggle": "Answer the risk questionnaire?",
+  "questions": {
+    "R1": "Did any part of the building fall or break off (roof, floor, stairs, balcony, wall, column)?",
+    "R2": "Does the building or any floor look tilted, twisted or leaning; doors/windows out of square; one side more sunken?",
+    "R3": "Do the columns that hold up the building have cracks (not the walls or plaster)?",
+    "R4": "Does any column have X-shaped or diagonal cracks, burst concrete, or exposed or bent rebar?",
+    "R5": "Does the ground floor look more damaged, crushed or lower than the floors above (soft story)?",
+    "R6": "Are there large cracks where the columns meet the roof or the beams?",
+    "R7": "Does any floor or roof look sunken, bowed or collapsed, or is it no longer level?",
+    "R8": "Did the building hit the neighboring one and get damaged at the joint, or pull apart leaving a gap?",
+    "R9": "Are there large cracks in the ground, sinking/heaving of the soil, or a slope that is sliding?",
+    "R10": "Are there water tanks, walls, parapets, glass, facade or balconies about to fall?",
+    "A1": "Are there cracks only in walls, plaster or partitions (not in columns or structure)?",
+    "A2": "Are there doors or windows that used to open fine and now are stuck?",
+    "A3": "Did lamps, plaster, tiles, cornices or the ceiling fall?",
+    "A4": "Is there damage you can't tell is serious, or couldn't get a good look at the columns and structure?"
+  },
+  "answers": {
+    "si": "Yes",
+    "no": "No",
+    "nose": "Don't know"
+  },
+  "levels": {
+    "ROJO": {
+      "title": "Risk — Danger",
+      "heading": "Do not enter or stay in the building.",
+      "body": "Signs of serious structural damage were detected. Leave immediately if you are inside and do not go back in, not even to retrieve belongings. Stay away from the facade and sidewalk too, due to falling hazards. Warn your neighbors. We reported this building so an engineer can inspect it."
+    },
+    "AMARILLO": {
+      "title": "Risk — Caution",
+      "heading": "The building was not confirmed safe.",
+      "body": "There is damage or signs that need inspection. Do not use the building normally and avoid the damaged areas while aftershocks continue. An engineer must inspect it before it is lived in again. We reported this building for inspection.",
+      "priority": "Priority inspection"
+    },
+    "NINGUNA": {
+      "title": "No serious signs observed",
+      "heading": "No serious signs were observed, but this is NOT an inspection.",
+      "body": "A quick check from outside may miss internal or hidden damage. Stay cautious during aftershocks. Only an engineer can confirm that the building is safe."
+    }
+  },
+  "disclaimer": "This tool is a community orientation guide, not a professional inspection, and does not guarantee the safety of any building. When in doubt, do not enter. The final decision belongs to a structural engineer.",
+  "needHelp": "I need help",
+  "viewMap": "View on the map"
+}

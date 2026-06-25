@@ -1,0 +1,46 @@
+{
+  "backSearch": "← Search",
+  "backMap": "← Map",
+  "person": {
+    "createdOk": "✅ Done! We saved your report. Share this link with your family.",
+    "photoAlt": "Photo of {name}",
+    "foundOn": "Reported as found on {date}",
+    "updated": "Updated {ago}",
+    "shareThis": "Share this report",
+    "recognizeTitle": "Do you recognize them or did you find them?",
+    "recognizeFromSource": "This report comes from {source}. Contact them there to share information:",
+    "phonePrivacy": "🔒 For privacy, phone numbers are never shown on this page.",
+    "markMeSafe": "Mark myself safe too",
+    "viewMap": "View help map"
+  },
+  "request": {
+    "createdOk": "✅ Done! We published your request. Share this link to get help.",
+    "updated": "Updated {ago}",
+    "toolsNeeded": "🛠️ Tools needed",
+    "shareThis": "Share this request",
+    "canHelpTitle": "Can you help?",
+    "fromSource": "This request comes from {source}. Contact them there:",
+    "viewMap": "View help map"
+  },
+  "building": {
+    "createdOk": "✅ Done! We published your report.",
+    "updated": "Updated {ago}",
+    "communityNote": "⚠️ Community report, not officially verified.",
+    "shareThis": "Share this report",
+    "viewMap": "View help map"
+  },
+  "requests": {
+    "thanksTitle": "🙌 Thank you for offering help!",
+    "activeTitle": "🆘 Active help requests",
+    "introFromOffer": "These people need help near you. If you can take one on, open it and leave your contact.",
+    "introFromOfferCovering": " Showing what you can cover with {offer}.",
+    "intro": "People who asked for help. Find one you can take on.",
+    "all": "All",
+    "filterByCity": "Filter by city",
+    "cityAria": "City",
+    "filter": "Filter",
+    "noResults": "No active requests match.",
+    "askForHelp": "Ask for help",
+    "distanceAway": "{distance} away"
+  }
+}

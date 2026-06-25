@@ -1,0 +1,9 @@
+{
+  "category": { "medical": "Médica", "food": "Comida", "water": "Agua", "shelter": "Refugio", "transportation": "Transporte", "electricity": "Electricidad", "rescue": "Rescate", "tools": "Herramientas" },
+  "offer": { "transportation": "Transporte", "food": "Comida", "shelter": "Refugio", "medical": "Médica", "supplies": "Suministros", "translation": "Traducción" },
+  "urgency": { "LOW": "Normal", "MEDIUM": "Importante", "HIGH": "Urgente", "CRITICAL": "Crítico" },
+  "severity": { "CRACKS": "Grietas", "PARTIAL": "Daño parcial", "COLLAPSE_RISK": "Riesgo de colapso", "COLLAPSED": "Colapso" },
+  "requestStatus": { "OPEN": "Abierta", "IN_PROGRESS": "En proceso", "RESOLVED": "Resuelta" },
+  "checkinStatus": { "SAFE": "A salvo", "NEEDS_HELP": "Necesita ayuda", "LOOKING_FOR_SOMEONE": "En búsqueda" },
+  "foundBadge": "Encontrado/a"
+}

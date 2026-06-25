@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Map as MLMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { VENEZUELA_CENTER, DEFAULT_ZOOM } from "@/lib/constants";
@@ -10,6 +11,7 @@ import { getMapStyle } from "@/lib/mapStyle";
 // <form> submits them. The map is lazy-loaded (dynamic import of maplibre-gl)
 // only when the user opens it — keeping the initial form payload tiny.
 export default function LocationPicker({ required = false }: { required?: boolean }) {
+  const t = useTranslations("forms.location");
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
   async function searchPlace() {
     const q = query.trim();
     if (q.length < 3) {
-      setSearchError("Escribe una dirección o lugar.");
+      setSearchError(t("searchTooShort"));
       return;
     }
     setSearching(true);
@@ -39,7 +41,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
       );
       const arr = (await res.json()) as Array<{ lat: string; lon: string }>;
       if (!Array.isArray(arr) || !arr.length) {
-        setSearchError("No encontramos ese lugar. Prueba con otra dirección.");
+        setSearchError(t("searchNotFound"));
         return;
       }
       const lat = +Number(arr[0].lat).toFixed(6);
@@ -50,7 +52,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
       // centers on the new coords when the panel opens.
       mapRef.current?.flyTo({ center: [lng, lat], zoom: 16 });
     } catch {
-      setSearchError("No se pudo buscar. Revisa tu conexión.");
+      setSearchError(t("searchFailed"));
     } finally {
       setSearching(false);
     }
@@ -94,7 +96,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
 
   function useMyLocation() {
     if (!navigator.geolocation) {
-      setGeoError("Tu dispositivo no permite ubicación.");
+      setGeoError(t("noGeolocation"));
       return;
     }
     setLocating(true);
@@ -108,7 +110,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
         mapRef.current?.flyTo({ center: [c.lng, c.lat], zoom: 15 });
       },
       () => {
-        setGeoError("No pudimos obtener tu ubicación. Puedes elegirla en el mapa.");
+        setGeoError(t("geoFailed"));
         setLocating(false);
         setOpen(true);
       },
@@ -133,8 +135,8 @@ export default function LocationPicker({ required = false }: { required?: boolea
               searchPlace();
             }
           }}
-          placeholder="Buscar dirección o lugar…"
-          aria-label="Buscar dirección o lugar"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchAria")}
           className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base"
         />
         <button
@@ -143,7 +145,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
           disabled={searching}
           className="shrink-0 rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-60"
         >
-          {searching ? "…" : "Buscar"}
+          {searching ? "…" : t("search")}
         </button>
       </div>
       {searchError && <p className="mb-2 text-sm text-amber-700">{searchError}</p>}
@@ -155,7 +157,7 @@ export default function LocationPicker({ required = false }: { required?: boolea
           className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 font-semibold text-blue-700 ring-1 ring-blue-200 active:scale-[0.99]"
         >
           <span aria-hidden>📍</span>
-          {locating ? "Buscando…" : "Usar mi ubicación"}
+          {locating ? t("locating") : t("useMyLocation")}
         </button>
         <button
           type="button"
@@ -163,14 +165,12 @@ export default function LocationPicker({ required = false }: { required?: boolea
           className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-700 active:scale-[0.99]"
         >
           <span aria-hidden>🗺️</span>
-          {open ? "Ocultar mapa" : "Elegir en el mapa"}
+          {open ? t("hideMap") : t("chooseOnMap")}
         </button>
       </div>
 
       {required && !coords && (
-        <p className="mt-2 text-sm text-slate-500">
-          Obligatorio: toca el mapa o usa tu ubicación.
-        </p>
+        <p className="mt-2 text-sm text-slate-500">{t("required")}</p>
       )}
 
       {geoError && <p className="mt-2 text-sm text-amber-700">{geoError}</p>}
@@ -187,14 +187,14 @@ export default function LocationPicker({ required = false }: { required?: boolea
             📍
           </div>
           <p className="bg-white/90 px-3 py-2 text-center text-sm text-slate-600">
-            Mueve el mapa para colocar el pin en tu ubicación.
+            {t("dragHint")}
           </p>
         </div>
       )}
 
       {coords && (
         <p className="mt-2 text-sm text-slate-500">
-          Ubicación seleccionada: {coords.lat}, {coords.lng}
+          {t("selected", { lat: coords.lat, lng: coords.lng })}
         </p>
       )}
     </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/PageShell";
 import CheckinForm from "@/components/forms/CheckinForm";
 
@@ -14,13 +15,14 @@ export default async function Page({
 }) {
   const sp = await searchParams;
   const isMissing = sp.modo === "desaparecido";
+  const t = await getTranslations("create");
 
   if (isMissing) {
     return (
       <PageShell
         emoji="🔎"
-        title="Reportar persona desaparecida"
-        intro="Indica el nombre y la última ubicación conocida para que otros puedan ayudar a encontrarla."
+        title={t("missing.title")}
+        intro={t("missing.intro")}
       >
         <CheckinForm initialStatus="LOOKING_FOR_SOMEONE" />
       </PageShell>
@@ -28,11 +30,7 @@ export default async function Page({
   }
 
   return (
-    <PageShell
-      emoji="✅"
-      title="Estoy a salvo"
-      intro="Comparte tu estado para tranquilizar a tu familia. Solo toma un momento."
-    >
+    <PageShell emoji="✅" title={t("safe.title")} intro={t("safe.intro")}>
       <CheckinForm />
     </PageShell>
   );

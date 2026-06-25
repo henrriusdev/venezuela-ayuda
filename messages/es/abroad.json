@@ -1,0 +1,13 @@
+{
+  "title": "Quiero ayudar fuera de Venezuela",
+  "intro": "Busca tu ciudad y encuentra lugares donde sumarte como voluntario o llevar donaciones a un centro de acopio.",
+  "tabAll": "Todos",
+  "need": {
+    "voluntarios": "Voluntarios",
+    "centro-de-acopio": "Centro de acopio"
+  },
+  "searchPlaceholder": "Buscar ciudad o lugar…",
+  "noResults": "No encontramos lugares para tu búsqueda.",
+  "placeCount": "{count, plural, one {# lugar} other {# lugares}}",
+  "website": "🌐 Sitio web ↗"
+}

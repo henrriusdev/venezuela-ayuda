@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   HELP_NEEDS,
   HELP_NEED_KEYS,
@@ -12,14 +13,16 @@ import {
 // Tabs filter the whole list by need. "all" shows everything.
 type TabKey = "all" | HelpNeed;
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "all", label: "Todos" },
-  ...HELP_NEED_KEYS.map((k) => ({ key: k, label: HELP_NEEDS[k].label })),
-];
+const TAB_KEYS: TabKey[] = ["all", ...HELP_NEED_KEYS];
 
 export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
+  const t = useTranslations("abroad");
   const [tab, setTab] = useState<TabKey>("all");
   const [query, setQuery] = useState("");
+
+  // Tab labels are localized; "all" has its own key, needs use need.<key>.
+  const tabLabel = (key: TabKey) =>
+    key === "all" ? t("tabAll") : t(`need.${key}`);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -49,13 +52,13 @@ export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
     <div>
       {/* Filter tabs */}
       <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
-        {TABS.map((t) => {
-          const active = tab === t.key;
+        {TAB_KEYS.map((key) => {
+          const active = tab === key;
           return (
             <button
-              key={t.key}
+              key={key}
               type="button"
-              onClick={() => setTab(t.key)}
+              onClick={() => setTab(key)}
               aria-pressed={active}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                 active
@@ -63,7 +66,7 @@ export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
                   : "text-[#5b6b7b] hover:text-[#14212e]"
               }`}
             >
-              {t.label}
+              {tabLabel(key)}
             </button>
           );
         })}
@@ -74,15 +77,13 @@ export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar ciudad o lugar…"
+        placeholder={t("searchPlaceholder")}
         className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-[#2563a8]"
       />
 
       {/* Results */}
       {filtered.length === 0 ? (
-        <p className="mt-6 text-center text-slate-500">
-          No encontramos lugares para tu búsqueda.
-        </p>
+        <p className="mt-6 text-center text-slate-500">{t("noResults")}</p>
       ) : (
         <div className="mt-6 space-y-7">
           {filtered.map((city) => (
@@ -90,8 +91,7 @@ export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
               <h2 className="flex items-baseline gap-2 text-lg font-bold text-[#14212e]">
                 {city.city} · {city.country}
                 <span className="text-sm font-medium text-[#8190a0]">
-                  {city.places.length}{" "}
-                  {city.places.length === 1 ? "lugar" : "lugares"}
+                  {t("placeCount", { count: city.places.length })}
                 </span>
               </h2>
               <ul className="mt-3 space-y-3">
@@ -110,6 +110,7 @@ export default function HelpAbroadList({ cities }: { cities: HelpCity[] }) {
 }
 
 function PlaceCard({ place }: { place: HelpPlace }) {
+  const t = useTranslations("abroad");
   return (
     <div className="rounded-2xl border border-[#e6ecf2] bg-white p-4">
       <h3 className="text-base font-semibold text-[#14212e]">{place.name}</h3>
@@ -138,7 +139,7 @@ function PlaceCard({ place }: { place: HelpPlace }) {
               rel="noopener noreferrer"
               className="font-semibold text-[#2563a8]"
             >
-              🌐 Sitio web ↗
+              {t("website")}
             </a>
           )}
         </div>
@@ -155,7 +156,7 @@ function PlaceCard({ place }: { place: HelpPlace }) {
                 style={{ backgroundColor: n.tintBg, color: n.tintText }}
               >
                 <span aria-hidden>{n.emoji}</span>
-                {n.label}
+                {t(`need.${need}`)}
               </span>
             );
           })}

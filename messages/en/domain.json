@@ -1,0 +1,9 @@
+{
+  "category": { "medical": "Medical", "food": "Food", "water": "Water", "shelter": "Shelter", "transportation": "Transportation", "electricity": "Electricity", "rescue": "Rescue", "tools": "Tools" },
+  "offer": { "transportation": "Transportation", "food": "Food", "shelter": "Shelter", "medical": "Medical", "supplies": "Supplies", "translation": "Translation" },
+  "urgency": { "LOW": "Normal", "MEDIUM": "Important", "HIGH": "Urgent", "CRITICAL": "Critical" },
+  "severity": { "CRACKS": "Cracks", "PARTIAL": "Partial damage", "COLLAPSE_RISK": "Collapse risk", "COLLAPSED": "Collapsed" },
+  "requestStatus": { "OPEN": "Open", "IN_PROGRESS": "In progress", "RESOLVED": "Resolved" },
+  "checkinStatus": { "SAFE": "Safe", "NEEDS_HELP": "Needs help", "LOOKING_FOR_SOMEONE": "Searching" },
+  "foundBadge": "Found"
+}

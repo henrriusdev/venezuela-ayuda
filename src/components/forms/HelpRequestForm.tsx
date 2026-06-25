@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { submitHelpRequest, type ActionState } from "@/app/actions";
 import { HELP_CATEGORIES, URGENCY_LEVELS, LIMITS, COMMON_TOOLS } from "@/lib/constants";
 import type { NeededItem } from "@/lib/types";
@@ -13,6 +14,10 @@ const initial: ActionState = { ok: false };
 
 export default function HelpRequestForm() {
   const [state, action] = useActionState(submitHelpRequest, initial);
+  const t = useTranslations("forms.request");
+  const tForms = useTranslations("forms");
+  const tCommon = useTranslations("common");
+  const tD = useTranslations("domain");
 
   // Controlled fields so the AI can pre-fill them.
   const [category, setCategory] = useState("");
@@ -28,7 +33,7 @@ export default function HelpRequestForm() {
   async function analyze() {
     const text = aiText.trim();
     if (text.length < 8) {
-      setAiNote("Escribe un poco más para analizar.");
+      setAiNote(t("aiTooShort"));
       return;
     }
     setAiBusy(true);
@@ -45,9 +50,9 @@ export default function HelpRequestForm() {
       if (data.urgency in URGENCY_LEVELS) setUrgency(data.urgency);
       if (data.location) setCity(String(data.location).slice(0, LIMITS.city));
       if (!description) setDescription(text.slice(0, LIMITS.description));
-      setAiNote("Revisé tu mensaje y rellené el formulario. Verifica los datos.");
+      setAiNote(t("aiDone"));
     } catch {
-      setAiNote("No se pudo analizar automáticamente. Completa el formulario manualmente.");
+      setAiNote(t("aiFailed"));
     } finally {
       setAiBusy(false);
     }
@@ -91,12 +96,12 @@ export default function HelpRequestForm() {
   if (state.ok) {
     return (
       <SuccessCard
-        title="Solicitud enviada"
-        message="Tu solicitud ya aparece en el mapa de ayuda. Compártela para que más personas la vean."
-        shareText="🆘 Hay una solicitud de ayuda en Venezuela Ayuda. Mira el mapa:"
+        title={t("successTitle")}
+        message={t("successMessage")}
+        shareText={t("successShare")}
         sharePath="/mapa"
         primaryHref="/mapa"
-        primaryLabel="Ver en el mapa"
+        primaryLabel={t("viewMap")}
       />
     );
   }
@@ -108,14 +113,14 @@ export default function HelpRequestForm() {
       {/* AI assist */}
       <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
         <Label htmlFor="aiText">
-          <span aria-hidden>✨</span> Describe la emergencia con tus palabras
+          <span aria-hidden>✨</span> {t("aiLabel")}
         </Label>
         <TextArea
           id="aiText"
           value={aiText}
           onChange={(e) => setAiText(e.target.value)}
           maxLength={LIMITS.description}
-          placeholder="Ej: Mi abuela está atrapada en un edificio en Barquisimeto y necesita oxígeno."
+          placeholder={t("aiPlaceholder")}
         />
         <button
           type="button"
@@ -123,7 +128,7 @@ export default function HelpRequestForm() {
           disabled={aiBusy}
           className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white disabled:opacity-60"
         >
-          {aiBusy ? "Analizando…" : "Analizar y rellenar"}
+          {aiBusy ? t("aiAnalyzing") : t("aiAnalyze")}
         </button>
         {aiNote && <p className="mt-2 text-sm text-slate-700">{aiNote}</p>}
       </div>
@@ -135,18 +140,18 @@ export default function HelpRequestForm() {
       )}
 
       <div>
-        <Label htmlFor="place_name">Nombre del lugar o edificio</Label>
+        <Label htmlFor="place_name">{t("placeLabel")}</Label>
         <TextInput
           id="place_name"
           name="place_name"
           maxLength={LIMITS.place_name}
-          placeholder="Ej: Residencias El Parque"
+          placeholder={t("placePlaceholder")}
         />
       </div>
 
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">
-          ¿Qué necesitas? <span className="text-red-600">*</span>
+          {t("categoryLegend")} <span className="text-red-600">*</span>
         </legend>
         <div className="grid grid-cols-3 gap-2.5">
           {(Object.keys(HELP_CATEGORIES) as Array<keyof typeof HELP_CATEGORIES>).map((k) => {
@@ -170,7 +175,7 @@ export default function HelpRequestForm() {
                   className="sr-only"
                 />
                 <span aria-hidden className="text-2xl">{HELP_CATEGORIES[k].emoji}</span>
-                {HELP_CATEGORIES[k].label}
+                {tD("category." + k)}
               </label>
             );
           })}
@@ -180,7 +185,7 @@ export default function HelpRequestForm() {
 
       <div>
         <Label htmlFor="description" required>
-          Descripción
+          {tCommon("description")}
         </Label>
         <TextArea
           id="description"
@@ -189,13 +194,13 @@ export default function HelpRequestForm() {
           maxLength={LIMITS.description}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="¿Qué necesitas? ¿Cuántas personas?"
+          placeholder={t("descriptionPlaceholder")}
         />
         <FieldError message={state.fieldErrors?.description} />
       </div>
 
       <fieldset>
-        <legend className="mb-2 block font-semibold text-slate-800">Urgencia</legend>
+        <legend className="mb-2 block font-semibold text-slate-800">{t("urgencyLegend")}</legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {(Object.keys(URGENCY_LEVELS) as Array<keyof typeof URGENCY_LEVELS>).map((k) => {
             const u = URGENCY_LEVELS[k];
@@ -218,7 +223,7 @@ export default function HelpRequestForm() {
                   onChange={() => setUrgency(k)}
                   className="sr-only"
                 />
-                {u.label}
+                {tD("urgency." + k)}
               </label>
             );
           })}
@@ -236,8 +241,8 @@ export default function HelpRequestForm() {
         }
       >
         <legend className="px-1 font-semibold text-slate-800">
-          🛠️ Herramientas / equipos necesarios
-          <span className="ml-2 font-normal text-slate-500">(opcional)</span>
+          {t("toolsLegend")}
+          <span className="ml-2 font-normal text-slate-500">{tCommon("optional")}</span>
         </legend>
 
         <div className="flex flex-wrap gap-2">
@@ -274,7 +279,7 @@ export default function HelpRequestForm() {
                   <button
                     type="button"
                     onClick={() => setQty(it.name, -1)}
-                    aria-label={`Restar ${it.name}`}
+                    aria-label={t("subtract", { name: it.name })}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e6ecf2] text-lg font-bold text-slate-700 active:scale-95"
                   >
                     −
@@ -285,7 +290,7 @@ export default function HelpRequestForm() {
                   <button
                     type="button"
                     onClick={() => setQty(it.name, 1)}
-                    aria-label={`Sumar ${it.name}`}
+                    aria-label={t("addItem", { name: it.name })}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e6ecf2] text-lg font-bold text-slate-700 active:scale-95"
                   >
                     +
@@ -294,7 +299,7 @@ export default function HelpRequestForm() {
                 <button
                   type="button"
                   onClick={() => removeItem(it.name)}
-                  aria-label={`Quitar ${it.name}`}
+                  aria-label={t("remove", { name: it.name })}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-slate-400 hover:text-red-600"
                 >
                   ×
@@ -315,7 +320,7 @@ export default function HelpRequestForm() {
               }
             }}
             maxLength={LIMITS.itemName}
-            placeholder="Otro…"
+            placeholder={t("toolsOtherPlaceholder")}
           />
           <button
             type="button"
@@ -323,7 +328,7 @@ export default function HelpRequestForm() {
             disabled={items.length >= LIMITS.maxItems}
             className="shrink-0 rounded-xl bg-[#2563a8] px-4 py-3 font-semibold text-white disabled:opacity-60"
           >
-            Agregar
+            {t("add")}
           </button>
         </div>
 
@@ -331,20 +336,20 @@ export default function HelpRequestForm() {
       </fieldset>
 
       <div>
-        <Label htmlFor="city">Ciudad</Label>
+        <Label htmlFor="city">{tCommon("city")}</Label>
         <TextInput
           id="city"
           name="city"
           maxLength={LIMITS.city}
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Ej: Barquisimeto"
+          placeholder={t("cityPlaceholder")}
         />
       </div>
 
       <div>
-        <Label htmlFor="contact" hint="(privado, opcional)">
-          Contacto / WhatsApp
+        <Label htmlFor="contact" hint={tForms("privateOptional")}>
+          {t("contactLabel")}
         </Label>
         <TextInput
           id="contact"
@@ -352,21 +357,21 @@ export default function HelpRequestForm() {
           type="tel"
           inputMode="tel"
           maxLength={LIMITS.phone}
-          placeholder="Para que los rescatistas te ubiquen"
+          placeholder={t("contactPlaceholder")}
         />
-        <p className="mt-1 text-sm text-slate-500">🔒 No se muestra públicamente.</p>
+        <p className="mt-1 text-sm text-slate-500">{tForms("notShownPublicly")}</p>
       </div>
 
       <div>
         <Label htmlFor="location" required>
-          Ubicación
+          {tForms("locationLabel")}
         </Label>
         <LocationPicker required />
         <FieldError message={state.fieldErrors?.location} />
       </div>
 
-      <SubmitButton tone="emergency" pendingLabel="Enviando…">
-        Publicar solicitud
+      <SubmitButton tone="emergency" pendingLabel={t("sending")}>
+        {t("submit")}
       </SubmitButton>
     </form>
   );

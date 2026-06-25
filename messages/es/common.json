@@ -1,1 +1,21 @@
-{ "skipToContent": "Saltar al contenido" }
+{
+  "skipToContent": "Saltar al contenido",
+  "back": "Volver",
+  "backHome": "← Volver al inicio",
+  "close": "Cerrar",
+  "loading": "Cargando…",
+  "optional": "(opcional)",
+  "send": "Enviar",
+  "share": "Compartir",
+  "copyLink": "Copiar enlace",
+  "copied": "¡Copiado!",
+  "viewSource": "Ver fuente →",
+  "approximate": "ubicación aproximada",
+  "city": "Ciudad",
+  "name": "Nombre",
+  "phone": "Teléfono",
+  "contact": "Contacto",
+  "message": "Mensaje",
+  "description": "Descripción",
+  "whatsapp": "WhatsApp"
+}

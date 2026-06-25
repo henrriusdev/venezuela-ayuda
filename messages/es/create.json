@@ -1,0 +1,23 @@
+{
+  "safe": {
+    "title": "Estoy a salvo",
+    "intro": "Comparte tu estado para tranquilizar a tu familia. Solo toma un momento."
+  },
+  "missing": {
+    "title": "Reportar persona desaparecida",
+    "intro": "Indica el nombre y la última ubicación conocida para que otros puedan ayudar a encontrarla."
+  },
+  "needHelp": {
+    "title": "Necesito ayuda",
+    "intro": "Describe lo que necesitas. Aparecerá en el mapa para rescatistas y voluntarios."
+  },
+  "canHelp": {
+    "title": "Puedo ayudar",
+    "intro": "Ofrece lo que puedas. Tu oferta aparecerá en el mapa para quienes la necesitan.",
+    "seeRequests": "🆘 O mira las solicitudes activas →"
+  },
+  "report": {
+    "title": "Reportar edificio dañado",
+    "intro": "Ayuda a mapear los daños estructurales. Indica el lugar y la gravedad."
+  }
+}

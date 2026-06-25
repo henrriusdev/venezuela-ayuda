@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { submitSighting } from "@/app/actions";
 import { Label, TextInput, TextArea, FieldError } from "@/components/Field";
 
 // Lets anyone who recognizes a reported person leave a contact + message that
 // only the original reporter can read. Posts via the submitSighting action.
 export default function SightingForm({ checkinId }: { checkinId: string }) {
+  const t = useTranslations("components.sightingForm");
+  const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -19,7 +22,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
   async function handleSubmit() {
     setError(null);
     if (!contact.trim() && !message.trim()) {
-      setError("Deja un contacto o un mensaje.");
+      setError(t("needContactOrMessage"));
       return;
     }
     setPending(true);
@@ -28,7 +31,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
     if (res.ok) {
       setDone(true);
     } else {
-      setError(res.error ?? "No se pudo enviar. Intenta de nuevo.");
+      setError(res.error ?? t("sendFailed"));
     }
   }
 
@@ -36,7 +39,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
     return (
       <section className="mt-4 rounded-2xl border border-[#e6ecf2] bg-white p-4">
         <p className="font-medium text-[#2f9e6e]">
-          ✅ Gracias. Enviamos tu aviso a quien reportó; te contactará pronto.
+          {t("doneTitle")}
         </p>
       </section>
     );
@@ -45,9 +48,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
   return (
     <section className="mt-4 rounded-2xl border border-[#e6ecf2] bg-white p-4">
       <p className="text-sm text-[#5b6b7b]">
-        ¿Reconoces a esta persona o la encontraste? Deja tus datos y un mensaje;
-        se los haremos llegar a quien la reportó (tu información solo la verá esa
-        persona).
+        {t("intro")}
       </p>
 
       {!open ? (
@@ -56,13 +57,13 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
           onClick={() => setOpen(true)}
           className="mt-3 w-full rounded-xl bg-[#2563a8] px-5 py-3 font-semibold text-white active:scale-[0.99]"
         >
-          ✋ La reconozco / La encontré
+          {t("openButton")}
         </button>
       ) : (
         <div className="mt-4 space-y-3">
           <div>
-            <Label htmlFor="sighting-name" hint="opcional">
-              Tu nombre
+            <Label htmlFor="sighting-name" hint={tc("optional")}>
+              {t("yourName")}
             </Label>
             <TextInput
               id="sighting-name"
@@ -75,7 +76,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
           </div>
 
           <div>
-            <Label htmlFor="sighting-contact">Tu contacto (teléfono)</Label>
+            <Label htmlFor="sighting-contact">{t("yourContact")}</Label>
             <TextInput
               id="sighting-contact"
               name="sighting-contact"
@@ -85,19 +86,19 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
               maxLength={120}
               inputMode="tel"
               autoComplete="tel"
-              placeholder="Ej. +58 412 1234567"
+              placeholder={t("phonePlaceholder")}
             />
           </div>
 
           <div>
-            <Label htmlFor="sighting-message">Mensaje</Label>
+            <Label htmlFor="sighting-message">{tc("message")}</Label>
             <TextArea
               id="sighting-message"
               name="sighting-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={1000}
-              placeholder="¿Dónde la viste? ¿Cómo está?"
+              placeholder={t("messagePlaceholder")}
             />
           </div>
 
@@ -106,7 +107,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
             aria-hidden
             className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden"
           >
-            <label htmlFor="website">No llenar este campo</label>
+            <label htmlFor="website">{t("honeypotLabel")}</label>
             <input
               id="website"
               name="website"
@@ -126,7 +127,7 @@ export default function SightingForm({ checkinId }: { checkinId: string }) {
             disabled={pending}
             className="w-full rounded-xl bg-[#2563a8] px-5 py-3 font-semibold text-white active:scale-[0.99] disabled:opacity-60"
           >
-            {pending ? "Enviando…" : "Enviar aviso"}
+            {pending ? t("sending") : t("submit")}
           </button>
         </div>
       )}

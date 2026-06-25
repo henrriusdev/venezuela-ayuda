@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Header from "@/components/Header";
 import MapView from "@/components/MapView";
 import SourcesNote from "@/components/SourcesNote";
@@ -16,6 +17,8 @@ export const revalidate = 20;
 
 export default async function Page() {
   const markers = await getMapMarkers();
+  const t = await getTranslations("map");
+  const tCommon = await getTranslations("common");
 
   return (
     <>
@@ -26,23 +29,23 @@ export default async function Page() {
             href="/"
             className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
           >
-            ← Volver al inicio
+            {tCommon("backHome")}
           </Link>
         </div>
         <div className="mx-auto mt-2 flex max-w-5xl items-center justify-between gap-3 px-4">
-          <h1 className="text-2xl font-extrabold text-slate-900">🗺️ Mapa de ayuda</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">{t("title")}</h1>
           <div className="flex items-center gap-2">
             <Link
               href="/solicitudes"
               className="rounded-xl bg-[#2563a8] px-4 py-2.5 text-sm font-bold text-white"
             >
-              🤝 Quiero ayudar
+              {t("wantToHelp")}
             </Link>
             <Link
               href="/necesito-ayuda"
               className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white"
             >
-              🆘 Pedir ayuda
+              {t("askForHelp")}
             </Link>
           </div>
         </div>
@@ -53,7 +56,7 @@ export default async function Page() {
 
         <div className="mx-auto max-w-5xl px-4 py-4">
           <p className="text-center text-sm text-slate-500">
-            Toca un punto para ver detalles. Usa los filtros para mostrar u ocultar categorías.
+            {t("hint")}
           </p>
           <SourcesNote />
         </div>

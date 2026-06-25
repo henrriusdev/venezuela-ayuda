@@ -1,0 +1,46 @@
+{
+  "backSearch": "← Buscar",
+  "backMap": "← Mapa",
+  "person": {
+    "createdOk": "✅ ¡Listo! Guardamos tu reporte. Comparte este enlace con tu familia.",
+    "photoAlt": "Foto de {name}",
+    "foundOn": "Reportado como encontrado/a el {date}",
+    "updated": "Actualizado {ago}",
+    "shareThis": "Comparte este reporte",
+    "recognizeTitle": "¿La reconoces o la encontraste?",
+    "recognizeFromSource": "Este reporte proviene de {source}. Contacta allí para dar información:",
+    "phonePrivacy": "🔒 Por privacidad, los teléfonos nunca se muestran en esta página.",
+    "markMeSafe": "Marcarme a salvo yo también",
+    "viewMap": "Ver mapa de ayuda"
+  },
+  "request": {
+    "createdOk": "✅ ¡Listo! Publicamos tu solicitud. Comparte este enlace para recibir ayuda.",
+    "updated": "Actualizado {ago}",
+    "toolsNeeded": "🛠️ Herramientas necesarias",
+    "shareThis": "Comparte esta solicitud",
+    "canHelpTitle": "¿Puedes ayudar?",
+    "fromSource": "Esta solicitud proviene de {source}. Contacta allí:",
+    "viewMap": "Ver mapa de ayuda"
+  },
+  "building": {
+    "createdOk": "✅ ¡Listo! Publicamos tu reporte.",
+    "updated": "Actualizado {ago}",
+    "communityNote": "⚠️ Reporte de la comunidad, sin verificación oficial.",
+    "shareThis": "Comparte este reporte",
+    "viewMap": "Ver mapa de ayuda"
+  },
+  "requests": {
+    "thanksTitle": "🙌 ¡Gracias por ofrecer ayuda!",
+    "activeTitle": "🆘 Solicitudes de ayuda activas",
+    "introFromOffer": "Estas personas necesitan ayuda cerca de ti. Si puedes atender una, ábrela y deja tu contacto.",
+    "introFromOfferCovering": " Mostrando lo que puedes cubrir con {offer}.",
+    "intro": "Personas que pidieron ayuda. Encuentra una que puedas atender.",
+    "all": "Todas",
+    "filterByCity": "Filtra por ciudad",
+    "cityAria": "Ciudad",
+    "filter": "Filtrar",
+    "noResults": "No hay solicitudes activas que coincidan.",
+    "askForHelp": "Pedir ayuda",
+    "distanceAway": "a {distance}"
+  }
+}

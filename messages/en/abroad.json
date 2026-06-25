@@ -1,0 +1,13 @@
+{
+  "title": "I want to help outside Venezuela",
+  "intro": "Search for your city and find places to join as a volunteer or drop off donations at a collection point.",
+  "tabAll": "All",
+  "need": {
+    "voluntarios": "Volunteers",
+    "centro-de-acopio": "Collection point"
+  },
+  "searchPlaceholder": "Search for a city or place…",
+  "noResults": "We couldn't find any places for your search.",
+  "placeCount": "{count, plural, one {# place} other {# places}}",
+  "website": "🌐 Website ↗"
+}

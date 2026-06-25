@@ -1,1 +1,21 @@
-{ "skipToContent": "Skip to content" }
+{
+  "skipToContent": "Skip to content",
+  "back": "Back",
+  "backHome": "← Back to home",
+  "close": "Close",
+  "loading": "Loading…",
+  "optional": "(optional)",
+  "send": "Send",
+  "share": "Share",
+  "copyLink": "Copy link",
+  "copied": "Copied!",
+  "viewSource": "View source →",
+  "approximate": "approximate location",
+  "city": "City",
+  "name": "Name",
+  "phone": "Phone",
+  "contact": "Contact",
+  "message": "Message",
+  "description": "Description",
+  "whatsapp": "WhatsApp"
+}

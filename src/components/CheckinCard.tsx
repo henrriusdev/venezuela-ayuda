@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import StatusBadge from "@/components/StatusBadge";
 import SourceBadge from "@/components/SourceBadge";
 import { timeAgo } from "@/lib/format";
@@ -16,6 +17,8 @@ function initials(name: string): string {
 
 export default function CheckinCard({ c }: { c: PublicCheckin }) {
   const s = CHECKIN_STATUSES[c.status];
+  const t = useTranslations("search");
+  const tD = useTranslations("domain");
   return (
     <Link
       href={`/persona/${c.id}`}
@@ -41,8 +44,9 @@ export default function CheckinCard({ c }: { c: PublicCheckin }) {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-semibold text-[#14212e]">{c.name}</h3>
           <p className="mt-0.5 text-xs text-[#8190a0]">
-            {c.place_name ? `🏢 ${c.place_name} · ` : ""}
-            {c.city ? `${c.city} · ` : ""}Actualizado {timeAgo(c.created_at)}
+            {c.place_name ? t("card.place", { place: c.place_name }) : ""}
+            {c.city ? `${c.city} · ` : ""}
+            {t("card.metaUpdated", { time: timeAgo(c.created_at) })}
           </p>
         </div>
         {c.found_at ? (
@@ -50,7 +54,7 @@ export default function CheckinCard({ c }: { c: PublicCheckin }) {
             className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold"
             style={{ backgroundColor: FOUND_BADGE.tintBg, color: FOUND_BADGE.tintText }}
           >
-            {FOUND_BADGE.emoji} {FOUND_BADGE.label}
+            {FOUND_BADGE.emoji} {tD("foundBadge")}
           </span>
         ) : (
           <StatusBadge status={c.status} />

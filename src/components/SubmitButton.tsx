@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 
 const TONES = {
   action: "#2563a8",
@@ -12,14 +13,16 @@ const TONES = {
 // double submits on slow connections.
 export default function SubmitButton({
   children,
-  pendingLabel = "Enviando…",
+  pendingLabel,
   tone = "action",
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
   tone?: keyof typeof TONES;
 }) {
+  const t = useTranslations("forms");
   const { pending } = useFormStatus();
+  const label = pendingLabel ?? t("offer.sending");
   return (
     <button
       type="submit"
@@ -34,7 +37,7 @@ export default function SubmitButton({
           className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
         />
       )}
-      {pending ? pendingLabel : children}
+      {pending ? label : children}
     </button>
   );
 }

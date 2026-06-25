@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Map as MLMap, GeoJSONSource, MapGeoJSONFeature } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { VENEZUELA_CENTER, DEFAULT_ZOOM } from "@/lib/constants";
 import { getMapStyle } from "@/lib/mapStyle";
 import type { MapMarker, MarkerKind } from "@/lib/types";
 
-const KIND_META: Record<MarkerKind, { color: string; label: string; emoji: string }> = {
-  need: { color: "#e2603a", label: "Necesitan ayuda", emoji: "🆘" },
-  missing: { color: "#b5811f", label: "Desaparecidos", emoji: "🔎" },
-  helper: { color: "#2563a8", label: "Voluntarios", emoji: "🤝" },
-  center: { color: "#0d9488", label: "Centros de acopio", emoji: "📦" },
-  damaged: { color: "#7f1d1d", label: "Edificios dañados", emoji: "🏚️" },
+// Visible label TEXT lives in the `map` namespace (map.kind.<key>); only
+// emoji/colors/logic stay here.
+const KIND_META: Record<MarkerKind, { color: string; emoji: string }> = {
+  need: { color: "#e2603a", emoji: "🆘" },
+  missing: { color: "#b5811f", emoji: "🔎" },
+  helper: { color: "#2563a8", emoji: "🤝" },
+  center: { color: "#0d9488", emoji: "📦" },
+  damaged: { color: "#7f1d1d", emoji: "🏚️" },
 };
 const ALL_KINDS = Object.keys(KIND_META) as MarkerKind[];
 
@@ -48,6 +51,8 @@ export default function MapView({
   heightClass?: string;
   initialZoom?: number;
 }) {
+  const t = useTranslations("map");
+  const tCommon = useTranslations("common");
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(false);
@@ -147,17 +152,21 @@ export default function MapView({
           if (!f) return;
           const p = f.properties as Record<string, string>;
           const meta = KIND_META[p.kind as MarkerKind] ?? KIND_META.need;
+          const kindLabel = t(`kind.${p.kind}`);
           const coords = (f.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
           const external = p.href?.startsWith("http");
-          const linkLabel = p.linkLabel || (external ? "Cómo llegar →" : "Ver detalle →");
+          const linkLabel = p.linkLabel || (external ? t("popup.directions") : t("popup.detail"));
+          const confidenceLabel = t("popup.confidence");
+          const sourceLabel = t("popup.source");
+          const approxText = tCommon("approximate");
           const html = `<div style="max-width:230px;font-family:system-ui">
-            <div style="font-weight:700;color:${meta.color}">${meta.emoji} ${escapeHtml(meta.label)}</div>
+            <div style="font-weight:700;color:${meta.color}">${meta.emoji} ${escapeHtml(kindLabel)}</div>
             <div style="font-weight:600;margin-top:2px">${escapeHtml(p.title)}</div>
             ${p.subtitle ? `<div style="color:#475569;font-size:13px;margin-top:2px">${escapeHtml(p.subtitle)}</div>` : ""}
-            ${p.confidence ? `<div style="font-size:12px;margin-top:6px"><b>Confianza:</b> ${escapeHtml(p.confidence)}</div>` : ""}
-            ${p.source ? `<div style="font-size:12px;margin-top:2px;color:#475569"><b>Fuente:</b> ${escapeHtml(p.source)}</div>` : ""}
+            ${p.confidence ? `<div style="font-size:12px;margin-top:6px"><b>${escapeHtml(confidenceLabel)}</b> ${escapeHtml(p.confidence)}</div>` : ""}
+            ${p.source ? `<div style="font-size:12px;margin-top:2px;color:#475569"><b>${escapeHtml(sourceLabel)}</b> ${escapeHtml(p.source)}</div>` : ""}
             ${p.note ? `<div style="font-size:11px;margin-top:4px;color:#94a3b8;font-style:italic">${escapeHtml(p.note)}</div>` : ""}
-            ${p.approx ? `<div style="font-size:11px;margin-top:4px;color:#94a3b8">📍 Ubicación aproximada</div>` : ""}
+            ${p.approx ? `<div style="font-size:11px;margin-top:4px;color:#94a3b8">📍 ${escapeHtml(approxText)}</div>` : ""}
             ${
               p.href
                 ? external
@@ -225,7 +234,7 @@ export default function MapView({
               }`}
               style={on ? { backgroundColor: m.color, borderColor: m.color } : { borderColor: "#cbd5e1" }}
             >
-              <span aria-hidden>{m.emoji}</span> {m.label}
+              <span aria-hidden>{m.emoji}</span> {t(`kind.${k}`)}
             </button>
           );
         })}
@@ -235,11 +244,11 @@ export default function MapView({
         <div ref={containerRef} className={`${heightClass} w-full`} />
         {!ready && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-500">
-            Cargando mapa…
+            {t("loading")}
           </div>
         )}
         <p className="absolute bottom-1 left-2 z-10 rounded bg-white/80 px-2 py-0.5 text-xs text-slate-600">
-          {filtered.length} en el mapa
+          {t("onMap", { count: filtered.length })}
         </p>
       </div>
     </div>
