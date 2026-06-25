@@ -18,7 +18,7 @@ import {
   URGENCY_LEVELS,
   DAMAGE_SEVERITY,
 } from "@/lib/constants";
-import type { Sighting } from "@/lib/types";
+import type { Sighting, RequestResponse } from "@/lib/types";
 
 export type ActionState = {
   ok: boolean;
@@ -253,13 +253,14 @@ export async function submitHelpOffer(
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
   const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
+  const city = cleanOptional(form.get("city"), LIMITS.city);
 
   try {
     const supabase = getServerSupabase();
     const { error } = await supabase.from("help_offers").insert({
       category,
       description: cleanOptional(form.get("description"), LIMITS.description),
-      city: cleanOptional(form.get("city"), LIMITS.city),
+      city,
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
       availability: cleanOptional(form.get("availability"), LIMITS.availability),
@@ -274,7 +275,14 @@ export async function submitHelpOffer(
   }
 
   revalidatePath("/mapa");
-  return { ok: true };
+  // Route the volunteer straight to matching requests near them.
+  const q = new URLSearchParams({ desde: "oferta", cat: category });
+  if (coords) {
+    q.set("lat", String(coords.lat));
+    q.set("lng", String(coords.lng));
+  }
+  if (city) q.set("ciudad", city);
+  redirect(`/solicitudes?${q.toString()}`);
 }
 
 // 5. Reporter-managed resolution -------------------------------------------
@@ -442,4 +450,67 @@ export async function fetchSightings(
     .eq("checkin_id", checkinId)
     .order("created_at", { ascending: false });
   return { ok: true, sightings: (data ?? []) as Sighting[] };
+}
+
+// --- Volunteer responses to help requests (relay) ----------------------------
+// Mirrors sightings: a volunteer leaves THEIR contact; only the requester (with
+// the manage token) can read it.
+export async function respondToRequest(
+  requestId: string,
+  responderName: string,
+  responderContact: string,
+  message: string,
+  website = ""
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  if (cleanText(website, 100)) return { ok: true }; // honeypot
+  const limited = rateLimit(await clientKey("respond"), { limit: 10, windowSec: 60 });
+  if (!limited.ok) return { ok: false, error: `Espera ${limited.retryAfterSec}s.` };
+  if (!UUID_RE.test(requestId)) return { ok: false, error: "Solicitud inválida." };
+
+  const name = cleanText(responderName, LIMITS.name);
+  const contact = cleanText(responderContact, LIMITS.phone);
+  const msg = cleanText(message, LIMITS.message);
+  if (!contact && !msg) return { ok: false, error: "Deja un contacto o un mensaje." };
+
+  try {
+    const supabase = getServerSupabase();
+    // Relays only apply to requests created on this site (which have a manage
+    // token). External/ingested requests point people to the original source.
+    const { data: r } = await supabase
+      .from("help_requests")
+      .select("status, source")
+      .eq("id", requestId)
+      .maybeSingle();
+    if (!r || r.status === "RESOLVED" || r.source)
+      return { ok: false, error: "Esta solicitud no acepta respuestas." };
+
+    const { error } = await supabase.from("request_responses").insert({
+      request_id: requestId,
+      responder_name: name || null,
+      responder_contact: contact || null,
+      message: msg || null,
+    });
+    if (error) throw error;
+  } catch {
+    return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
+  }
+  return { ok: true };
+}
+
+export async function fetchRequestResponses(
+  requestId: string,
+  token: string
+): Promise<{ ok: boolean; responses?: RequestResponse[]; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  if (!UUID_RE.test(requestId) || !token) return { ok: false, error: "No autorizado." };
+  if (!(await verifyManageToken("help_requests", requestId, token)))
+    return { ok: false, error: "No autorizado." };
+  const supabase = getServerSupabase();
+  const { data } = await supabase
+    .from("request_responses")
+    .select("id, responder_name, responder_contact, message, created_at")
+    .eq("request_id", requestId)
+    .order("created_at", { ascending: false });
+  return { ok: true, responses: (data ?? []) as RequestResponse[] };
 }

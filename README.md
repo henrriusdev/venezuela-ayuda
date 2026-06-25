@@ -5,7 +5,7 @@ Venezuela. Ayuda a las personas a reencontrarse con sus familiares, reportar y
 encontrar necesidades, y ver la situación en un mapa — **sin necesidad de
 cuenta**, en **español**, y optimizada para **móviles y conexiones lentas**.
 
-🌐 **[venezuela-ayuda.vercel.app](https://venezuela-ayuda.vercel.app)**
+🌐 **[venezuela-ayuda.com](https://venezuela-ayuda.com)**
 
 ## Qué hace
 

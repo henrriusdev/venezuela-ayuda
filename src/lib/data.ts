@@ -6,6 +6,7 @@ import type {
   PublicHelpOffer,
   PublicDamagedReport,
   MapMarker,
+  LatLng,
 } from "@/lib/types";
 import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY } from "@/lib/constants";
 import { formatItems } from "@/lib/validation";
@@ -139,6 +140,61 @@ export async function getCheckin(id: string): Promise<PublicCheckin | null> {
     .maybeSingle();
   if (error || !data) return null;
   return data as PublicCheckin;
+}
+
+// Open help requests for volunteer matching: filter by mapped categories, then
+// rank by distance from the volunteer (rows without coords go last).
+function haversineKm(a: LatLng, b: LatLng): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const la1 = (a.lat * Math.PI) / 180;
+  const la2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+export type MatchedRequest = PublicHelpRequest & { distanceKm?: number };
+
+export async function getMatchingRequests(params: {
+  categories?: string[];
+  lat?: number;
+  lng?: number;
+  city?: string;
+  limit?: number;
+}): Promise<MatchedRequest[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  let query = supabase
+    .from("public_help_requests")
+    .select("*")
+    .neq("status", "RESOLVED")
+    .order("created_at", { ascending: false })
+    .limit(params.limit ?? 150);
+  if (params.categories && params.categories.length)
+    query = query.in("category", params.categories);
+  if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
+
+  const { data, error } = await query;
+  if (error) return [];
+  const rows = (data ?? []) as MatchedRequest[];
+
+  const hasCoords =
+    Number.isFinite(params.lat) && Number.isFinite(params.lng);
+  if (hasCoords) {
+    const origin = { lat: params.lat as number, lng: params.lng as number };
+    for (const r of rows) {
+      if (r.latitude != null && r.longitude != null)
+        r.distanceKm = haversineKm(origin, { lat: r.latitude, lng: r.longitude });
+    }
+    rows.sort((a, b) => {
+      if (a.distanceKm == null) return b.distanceKm == null ? 0 : 1;
+      if (b.distanceKm == null) return -1;
+      return a.distanceKm - b.distanceKm;
+    });
+  }
+  return rows;
 }
 
 export async function getHelpRequest(

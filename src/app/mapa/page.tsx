@@ -31,12 +31,20 @@ export default async function Page() {
         </div>
         <div className="mx-auto mt-2 flex max-w-5xl items-center justify-between gap-3 px-4">
           <h1 className="text-2xl font-extrabold text-slate-900">🗺️ Mapa de ayuda</h1>
-          <Link
-            href="/necesito-ayuda"
-            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white"
-          >
-            🆘 Pedir ayuda
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/solicitudes"
+              className="rounded-xl bg-[#2563a8] px-4 py-2.5 text-sm font-bold text-white"
+            >
+              🤝 Quiero ayudar
+            </Link>
+            <Link
+              href="/necesito-ayuda"
+              className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white"
+            >
+              🆘 Pedir ayuda
+            </Link>
+          </div>
         </div>
 
         <div className="mx-auto mt-2 max-w-5xl">

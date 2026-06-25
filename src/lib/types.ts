@@ -87,6 +87,15 @@ export interface Sighting {
   created_at: string;
 }
 
+// A volunteer's response to a help request (relay).
+export interface RequestResponse {
+  id: string;
+  responder_name: string | null;
+  responder_contact: string | null;
+  message: string | null;
+  created_at: string;
+}
+
 export type LatLng = { lat: number; lng: number };
 
 // Unified shape consumed by the map. Kinds: places that need help, missing

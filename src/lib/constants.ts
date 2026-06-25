@@ -53,6 +53,17 @@ export const OFFER_CATEGORIES = {
 } as const;
 export type OfferCategory = keyof typeof OFFER_CATEGORIES;
 
+// Which help-request categories each offer can fulfill (offer ↔ request
+// categories don't overlap 1:1). `translation` is cross-cutting → empty = all.
+export const OFFER_TO_HELP: Record<OfferCategory, HelpCategory[]> = {
+  transportation: ["transportation", "rescue"],
+  food: ["food", "water"],
+  shelter: ["shelter"],
+  medical: ["medical"],
+  supplies: ["food", "water", "tools", "shelter", "electricity"],
+  translation: [],
+};
+
 // Labels follow the design language (Normal / Importante / Urgente / Crítico);
 // the DB enum keys (LOW/MEDIUM/HIGH/CRITICAL) are unchanged.
 export const URGENCY_LEVELS = {

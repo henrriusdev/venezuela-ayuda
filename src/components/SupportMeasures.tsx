@@ -13,8 +13,7 @@ export default function SupportMeasures() {
       </h2>
       <p className="mt-1 leading-relaxed text-[#33414f]">
         Viajes gratis a hospitales y clínicas en Caracas, sin tarifas dinámicas el
-        resto del día, y los conductores reciben el 100% (sin comisión). Salir es
-        voluntario.
+        resto del día.
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <a
