@@ -23,10 +23,10 @@ export default function EmergencyPhones() {
             fill="#dc2626"
           />
         </svg>
-        Teléfonos de emergencia · Caracas
+        Teléfonos de emergencia
       </h2>
 
-      <ul className="grid gap-3">
+      <ul className="grid grid-cols-2 gap-3">
         {PHONES.map((p) => (
           <li key={p.label}>
             <a
