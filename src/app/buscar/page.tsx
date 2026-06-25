@@ -76,6 +76,15 @@ export default async function Page({
             <p className="mt-1 text-sm">
               Por privacidad no mostramos un listado completo de personas.
             </p>
+            <div className="mt-5 border-t border-slate-100 pt-5">
+              <p className="text-sm">¿Buscas a alguien que no aparece?</p>
+              <Link
+                href="/a-salvo?modo=desaparecido"
+                className="mt-3 inline-block rounded-[15px] bg-[#2563a8] px-5 py-3 font-semibold text-white"
+              >
+                Reportar a una persona como desaparecida
+              </Link>
+            </div>
           </div>
         ) : (
           <>
