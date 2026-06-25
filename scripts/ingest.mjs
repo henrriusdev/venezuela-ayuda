@@ -42,7 +42,17 @@ const H = { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "
 
 // --- helpers -----------------------------------------------------------------
 // norm / fuzzyKey / clusterKeys viven en ./dedup-lib.mjs (puro, testeable con node --test).
-const clean = (s, n = 500) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n) || null;
+// Sanitize for Postgres text + valid JSON: strip control chars / null bytes
+// (Postgres text can't store NUL), collapse whitespace, cap length without
+// leaving a lone surrogate (which would be invalid UTF-8 / JSON).
+const clean = (s, n = 500) =>
+  String(s ?? "")
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, n)
+    .replace(/[\uD800-\uDBFF]$/, "")
+    .trim() || null;
 
 const VE = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && lat > 0 && lat < 16 && lng > -74 && lng < -59;
 
@@ -391,17 +401,39 @@ const COLS = {
 const project = (table, row) => Object.fromEntries(COLS[table].map((c) => [c, row[c] ?? null]));
 
 async function insertBatch(table, rows) {
+  let inserted = 0;
+  let skipped = 0;
   for (let i = 0; i < rows.length; i += 500) {
     const batch = rows.slice(i, i + 500).map((r) => project(table, r));
-    const r = await fetch(`${REST}/${table}`, {
-      method: "POST",
-      headers: { ...H, Prefer: "return=minimal" },
-      body: JSON.stringify(batch),
-    });
-    if (!r.ok) throw new Error(`insert ${table}: ${r.status} ${await r.text()}`);
-    process.stdout.write(`  ${table}: +${Math.min(i + 500, rows.length)}/${rows.length}\r`);
+    const res = await insertChunk(table, batch);
+    inserted += res.inserted;
+    skipped += res.skipped;
+    process.stdout.write(`  ${table}: +${inserted}/${rows.length}\r`);
   }
   process.stdout.write("\n");
+  if (skipped) console.log(`  (${table}: skipped ${skipped} bad row(s))`);
+}
+
+// Insert a chunk; on failure, bisect to isolate and skip only the bad row(s)
+// instead of dropping the whole batch (one malformed value used to abort the
+// entire insert).
+async function insertChunk(table, batch) {
+  if (batch.length === 0) return { inserted: 0, skipped: 0 };
+  const r = await fetch(`${REST}/${table}`, {
+    method: "POST",
+    headers: { ...H, Prefer: "return=minimal" },
+    body: JSON.stringify(batch),
+  });
+  if (r.ok) return { inserted: batch.length, skipped: 0 };
+
+  if (batch.length === 1) {
+    console.log(`\n  skipped 1 bad ${table} row (${r.status}): ${(await r.text()).slice(0, 140)}`);
+    return { inserted: 0, skipped: 1 };
+  }
+  const mid = Math.floor(batch.length / 2);
+  const a = await insertChunk(table, batch.slice(0, mid));
+  const b = await insertChunk(table, batch.slice(mid));
+  return { inserted: a.inserted + b.inserted, skipped: a.skipped + b.skipped };
 }
 
 // --- run ---------------------------------------------------------------------
