@@ -2,7 +2,14 @@
 
 import { useActionState, useState } from "react";
 import { submitDamagedReport, type ActionState } from "@/app/actions";
-import { DAMAGE_SEVERITY, LIMITS } from "@/lib/constants";
+import {
+  DAMAGE_SEVERITY,
+  LIMITS,
+  RISK_ANSWERS,
+  RISK_QUESTIONS_SEVERE,
+  RISK_QUESTIONS_MINOR,
+  type RiskAnswer,
+} from "@/lib/constants";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
 import LocationPicker from "@/components/LocationPicker";
 import PhotoInput from "@/components/PhotoInput";
@@ -13,6 +20,8 @@ const initial: ActionState = { ok: false };
 export default function DamagedReportForm() {
   const [state, action] = useActionState(submitDamagedReport, initial);
   const [severity, setSeverity] = useState("");
+  const [riskOpen, setRiskOpen] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, RiskAnswer>>({});
 
   return (
     <form action={action} className="space-y-5">
@@ -71,6 +80,54 @@ export default function DamagedReportForm() {
         <FieldError message={state.fieldErrors?.severity} />
       </fieldset>
 
+      {/* Optional structural-risk questionnaire ----------------------------- */}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+        <input type="hidden" name="risk_enabled" value={riskOpen ? "1" : "0"} />
+        <div className="flex items-center justify-between gap-3">
+          <span id="risk-toggle-label" className="font-semibold text-slate-800">
+            ¿Responder cuestionario de riesgo?{" "}
+            <span className="font-normal text-slate-500">(opcional)</span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={riskOpen}
+            aria-labelledby="risk-toggle-label"
+            onClick={() => setRiskOpen((v) => !v)}
+            className="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors"
+            style={{ backgroundColor: riskOpen ? "#2563a8" : "#cbd5e1" }}
+          >
+            <span
+              className="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
+              style={{ transform: riskOpen ? "translateX(22px)" : "translateX(4px)" }}
+            />
+          </button>
+        </div>
+
+        {riskOpen && (
+          <div className="mt-4 space-y-6">
+            <p className="text-sm text-slate-500">
+              Responde todas las preguntas. Si no estás seguro, elige “No sé”.
+            </p>
+
+            <RiskSection
+              legend="Señales graves"
+              questions={RISK_QUESTIONS_SEVERE}
+              answers={answers}
+              onAnswer={(id, v) => setAnswers((a) => ({ ...a, [id]: v }))}
+            />
+            <RiskSection
+              legend="Señales menores"
+              questions={RISK_QUESTIONS_MINOR}
+              answers={answers}
+              onAnswer={(id, v) => setAnswers((a) => ({ ...a, [id]: v }))}
+            />
+
+            <FieldError message={state.fieldErrors?.risk} />
+          </div>
+        )}
+      </div>
+
       <div>
         <Label htmlFor="description" hint="(opcional)">
           Describe el daño
@@ -116,5 +173,56 @@ export default function DamagedReportForm() {
         Publicar reporte
       </SubmitButton>
     </form>
+  );
+}
+
+function RiskSection({
+  legend,
+  questions,
+  answers,
+  onAnswer,
+}: {
+  legend: string;
+  questions: ReadonlyArray<{ id: string; text: string }>;
+  answers: Record<string, RiskAnswer>;
+  onAnswer: (id: string, value: RiskAnswer) => void;
+}) {
+  return (
+    <fieldset className="space-y-3">
+      <legend className="mb-1 text-sm font-bold uppercase tracking-wide text-slate-500">
+        {legend}
+      </legend>
+      {questions.map((q) => (
+        <div key={q.id} className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="font-medium text-slate-800">{q.text}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {RISK_ANSWERS.map((opt) => {
+              const on = answers[q.id] === opt.value;
+              return (
+                <label
+                  key={opt.value}
+                  className="flex cursor-pointer items-center justify-center rounded-lg border bg-white px-2 py-2 text-center text-sm font-semibold"
+                  style={
+                    on
+                      ? { backgroundColor: "#eef3fa", color: "#2563a8", borderColor: "#2563a8", borderWidth: 2 }
+                      : { borderColor: "#e6ecf2", color: "#33414f" }
+                  }
+                >
+                  <input
+                    type="radio"
+                    name={`risk_${q.id}`}
+                    value={opt.value}
+                    checked={on}
+                    onChange={() => onAnswer(q.id, opt.value)}
+                    className="sr-only"
+                  />
+                  {opt.label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </fieldset>
   );
 }

@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import ShareButtons from "@/components/ShareButtons";
 import SourceBadge from "@/components/SourceBadge";
 import ManageControls from "@/components/ManageControls";
+import RiskResult from "@/components/RiskResult";
 import { getDamagedReport } from "@/lib/data";
 import { fullDate, timeAgo } from "@/lib/format";
 import { siteUrl } from "@/lib/share";
@@ -79,6 +80,15 @@ export default async function Page({
               </span>
             )}
           </div>
+
+          {r.risk_level && (
+            <RiskResult
+              level={r.risk_level}
+              priority={r.risk_priority}
+              shareUrl={url}
+              shareText={shareText}
+            />
+          )}
 
           {r.photo_url && (
             // eslint-disable-next-line @next/next/no-img-element

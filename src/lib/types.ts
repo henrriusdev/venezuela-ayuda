@@ -5,6 +5,7 @@ import type {
   UrgencyLevel,
   RequestStatus,
   DamageSeverity,
+  RiskLevel,
 } from "./constants";
 
 // These mirror the privacy-safe public_* views — they intentionally omit
@@ -76,6 +77,8 @@ export interface PublicDamagedReport {
   verified_by: string | null;
   source: string | null;
   source_url: string | null;
+  risk_level: RiskLevel | null;
+  risk_priority: boolean | null;
 }
 
 // A sighting / "aviso" left by someone who recognized a missing person.
