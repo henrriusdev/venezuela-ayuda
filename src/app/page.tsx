@@ -32,13 +32,6 @@ export default async function Home() {
         {/* Primary actions */}
         <section className="grid gap-3" aria-label="Acciones principales">
           <BigButton
-            href="/a-salvo"
-            emoji="✅"
-            label="Estoy a salvo"
-            sublabel="Avisa a tu familia que estás bien"
-            tileBg="#eaf3ec"
-          />
-          <BigButton
             href="/buscar"
             emoji="🔎"
             label="Busco a alguien"
@@ -54,18 +47,25 @@ export default async function Home() {
             accent
           />
           <BigButton
-            href="/puedo-ayudar"
-            emoji="🤝"
-            label="Puedo ayudar"
-            sublabel="Ofrece tu apoyo a la comunidad"
-            tileBg="#e9f6ef"
-          />
-          <BigButton
             href="/reportar-edificio"
             emoji="🏚️"
             label="Reportar edificio dañado"
             sublabel="Reporta daños estructurales"
             tileBg="#f6dada"
+          />
+          <BigButton
+            href="/a-salvo"
+            emoji="✅"
+            label="Estoy a salvo"
+            sublabel="Avisa a tu familia que estás bien"
+            tileBg="#eaf3ec"
+          />
+          <BigButton
+            href="/puedo-ayudar"
+            emoji="🤝"
+            label="Puedo ayudar"
+            sublabel="Ofrece tu apoyo a la comunidad"
+            tileBg="#e9f6ef"
           />
           <BigButton
             href="/mapa"
@@ -77,10 +77,13 @@ export default async function Home() {
         </section>
 
         {/* Live stats */}
-        <section className="mt-5 grid grid-cols-3 gap-2.5" aria-label="Estadísticas">
-          <Stat value={fmt(stats.people)} label="Personas registradas" color="#14212e" />
-          <Stat value={fmt(stats.requests)} label="Solicitudes activas" color="#e2603a" />
-          <Stat value={fmt(stats.helpers)} label="Personas ayudando" color="#2563a8" />
+        <section className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Estadísticas">
+          <Stat emoji="✅" value={fmt(stats.safe)} label="A salvo" color="#2f9e6e" />
+          <Stat emoji="🔎" value={fmt(stats.missing)} label="Desaparecidos" color="#b5811f" />
+          <Stat emoji="💚" value={fmt(stats.found)} label="Encontrados" color="#1f7a52" />
+          <Stat emoji="🆘" value={fmt(stats.requests)} label="Solicitudes activas" color="#e2603a" />
+          <Stat emoji="🤝" value={fmt(stats.helpers)} label="Voluntarios" color="#2563a8" />
+          <Stat emoji="🏚️" value={fmt(stats.damaged)} label="Edificios dañados" color="#7f1d1d" />
         </section>
 
         <div className="mt-5 grid gap-5">
@@ -121,13 +124,26 @@ export default async function Home() {
   );
 }
 
-function Stat({ value, label, color }: { value: string; label: string; color: string }) {
+function Stat({
+  value,
+  label,
+  color,
+  emoji,
+}: {
+  value: string;
+  label: string;
+  color: string;
+  emoji: string;
+}) {
   return (
     <div className="rounded-[14px] border border-[#e6ecf2] bg-white px-2.5 py-3 text-center">
-      <div className="text-xl font-bold" style={{ color }}>
+      <div aria-hidden className="text-base leading-none">
+        {emoji}
+      </div>
+      <div className="mt-1 text-2xl font-bold leading-none" style={{ color }}>
         {value}
       </div>
-      <div className="mt-1 text-[11px] leading-tight text-[#8190a0]">{label}</div>
+      <div className="mt-1 text-[11px] font-medium leading-tight text-[#5b6b7b]">{label}</div>
     </div>
   );
 }

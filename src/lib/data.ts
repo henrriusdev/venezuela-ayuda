@@ -272,30 +272,45 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
 }
 
 export interface Stats {
-  people: number;
+  safe: number;
+  missing: number;
+  found: number;
   requests: number;
   helpers: number;
+  damaged: number;
 }
 
-// Lightweight COUNT(*) for the landing strip. `head: true` fetches no rows.
+const ZERO_STATS: Stats = { safe: 0, missing: 0, found: 0, requests: 0, helpers: 0, damaged: 0 };
+
+// Lightweight COUNT(*) per category for the landing strip. `head: true` fetches
+// no rows — just the counts.
 export async function getStats(): Promise<Stats> {
-  if (!isSupabaseConfigured()) return { people: 0, requests: 0, helpers: 0 };
+  if (!isSupabaseConfigured()) return ZERO_STATS;
   const supabase = getServerSupabase();
-  const [people, requests, helpers] = await Promise.all([
-    supabase.from("public_checkins").select("id", { count: "exact", head: true }),
+  const count = () => ({ count: "exact" as const, head: true });
+  const [safe, missing, found, requests, helpers, damaged] = await Promise.all([
+    supabase.from("public_checkins").select("id", count()).eq("status", "SAFE"),
     supabase
-      .from("public_help_requests")
-      .select("id", { count: "exact", head: true })
-      .neq("status", "RESOLVED"),
+      .from("public_checkins")
+      .select("id", count())
+      .eq("status", "LOOKING_FOR_SOMEONE")
+      .is("found_at", null),
     supabase
-      .from("public_help_offers")
-      .select("id", { count: "exact", head: true })
-      .eq("available", true),
+      .from("public_checkins")
+      .select("id", count())
+      .eq("status", "LOOKING_FOR_SOMEONE")
+      .not("found_at", "is", null),
+    supabase.from("public_help_requests").select("id", count()).neq("status", "RESOLVED"),
+    supabase.from("public_help_offers").select("id", count()).eq("available", true),
+    supabase.from("public_damaged_reports").select("id", count()).neq("status", "RESOLVED"),
   ]);
   return {
-    people: people.count ?? 0,
+    safe: safe.count ?? 0,
+    missing: missing.count ?? 0,
+    found: found.count ?? 0,
     requests: requests.count ?? 0,
     helpers: helpers.count ?? 0,
+    damaged: damaged.count ?? 0,
   };
 }
 
