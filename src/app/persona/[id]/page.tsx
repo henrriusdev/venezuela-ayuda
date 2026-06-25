@@ -6,6 +6,7 @@ import StatusBadge from "@/components/StatusBadge";
 import SourceBadge from "@/components/SourceBadge";
 import ShareButtons from "@/components/ShareButtons";
 import ManageControls from "@/components/ManageControls";
+import GuideInvitePopup from "@/components/GuideInvitePopup";
 import SightingForm from "@/components/SightingForm";
 import SightingsInbox from "@/components/SightingsInbox";
 import { getCheckin } from "@/lib/data";
@@ -50,6 +51,7 @@ export default async function Page({
     <>
       <Header />
       <main id="contenido" className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+        {nuevo === "1" && <GuideInvitePopup />}
         <Link
           href="/buscar"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"

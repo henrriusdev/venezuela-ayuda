@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
+import GuideInvitePopup from "@/components/GuideInvitePopup";
 import SourceBadge from "@/components/SourceBadge";
 import { getMatchingRequests } from "@/lib/data";
 import { formatItems } from "@/lib/validation";
@@ -80,6 +81,7 @@ export default async function Page({
         id="contenido"
         className="mx-auto w-full max-w-2xl flex-1 px-4 py-6"
       >
+        {fromOffer && <GuideInvitePopup />}
         <Link
           href="/"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
