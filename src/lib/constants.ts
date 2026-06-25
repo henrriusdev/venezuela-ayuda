@@ -63,6 +63,15 @@ export const URGENCY_LEVELS = {
 } as const;
 export type UrgencyLevel = keyof typeof URGENCY_LEVELS;
 
+// Severity levels for community damaged-building reports.
+export const DAMAGE_SEVERITY = {
+  CRACKS: { label: "Grietas", color: "#ca8a04", tintBg: "#fff5e6" },
+  PARTIAL: { label: "Daño parcial", color: "#ea580c", tintBg: "#fdf0e9" },
+  COLLAPSE_RISK: { label: "Riesgo de colapso", color: "#dc2626", tintBg: "#fbe9e4" },
+  COLLAPSED: { label: "Colapso", color: "#7f1d1d", tintBg: "#f6dada" },
+} as const;
+export type DamageSeverity = keyof typeof DAMAGE_SEVERITY;
+
 // Shown when a missing-person check-in has been resolved (found_at set).
 export const FOUND_BADGE = {
   label: "Encontrado/a",

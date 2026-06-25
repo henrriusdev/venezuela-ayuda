@@ -4,9 +4,10 @@ import type {
   PublicCheckin,
   PublicHelpRequest,
   PublicHelpOffer,
+  PublicDamagedReport,
   MapMarker,
 } from "@/lib/types";
-import { HELP_CATEGORIES, OFFER_CATEGORIES } from "@/lib/constants";
+import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY } from "@/lib/constants";
 import { formatItems } from "@/lib/validation";
 import { getDamagedBuildingMarkers } from "@/lib/damagedBuildings";
 
@@ -130,6 +131,50 @@ export async function getHelpRequest(
   return data as PublicHelpRequest;
 }
 
+export async function getDamagedReport(
+  id: string,
+): Promise<PublicDamagedReport | null> {
+  if (!isSupabaseConfigured() || !isUuid(id)) return null;
+  const supabase = getServerSupabase();
+  const { data, error } = await supabase
+    .from("public_damaged_reports")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as PublicDamagedReport;
+}
+
+// Community-reported damaged buildings (from the DB view). Separate from the
+// curated spreadsheet markers in getDamagedBuildingMarkers(); both use kind
+// "damaged" intentionally.
+export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  const { data } = await supabase
+    .from("public_damaged_reports")
+    .select(
+      "id,place_name,description,severity,city,latitude,longitude,photo_url,status,created_at",
+    )
+    .not("latitude", "is", null)
+    .neq("status", "RESOLVED")
+    .order("created_at", { ascending: false })
+    .limit(2000);
+
+  return ((data ?? []) as PublicDamagedReport[]).map((r) => ({
+    id: `dr_${r.id}`,
+    kind: "damaged",
+    lat: r.latitude!,
+    lng: r.longitude!,
+    title: r.place_name,
+    subtitle: `${DAMAGE_SEVERITY[r.severity]?.label ?? r.severity}${
+      r.description ? ` — ${r.description.slice(0, 100)}` : ""
+    }`,
+    confidence: "Reporte de la comunidad (sin verificar)",
+    href: `/edificio/${r.id}`,
+  }));
+}
+
 export async function getMapMarkers(): Promise<MapMarker[]> {
   // Curated relief centers + damaged-building reports are always shown, even if
   // the DB is unavailable. These run in parallel and fail soft.
@@ -217,6 +262,8 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       href: "/mapa",
     });
   }
+
+  markers.push(...(await getDamagedReportMarkers()));
 
   return markers;
 }

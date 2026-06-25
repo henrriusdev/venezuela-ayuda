@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { markCheckinFound, resolveHelpRequest } from "@/app/actions";
+import {
+  markCheckinFound,
+  resolveHelpRequest,
+  resolveDamagedReport,
+} from "@/app/actions";
 import { siteUrl } from "@/lib/share";
 
 // Reporter-only management. The secret manage token comes from the URL at
@@ -15,7 +19,7 @@ export default function ManageControls({
   urlToken,
   isNew = false,
 }: {
-  kind: "checkin" | "request";
+  kind: "checkin" | "request" | "damaged";
   id: string;
   resolved: boolean;
   urlToken?: string;
@@ -46,7 +50,9 @@ export default function ManageControls({
   // No token known and not a fresh report → render nothing.
   if (!token && !isNew) return null;
 
-  const path = `/${kind === "checkin" ? "persona" : "solicitud"}/${id}`;
+  const path = `/${
+    kind === "checkin" ? "persona" : kind === "request" ? "solicitud" : "edificio"
+  }/${id}`;
 
   async function copyManageLink() {
     if (!token) return;
@@ -67,7 +73,9 @@ export default function ManageControls({
       const result =
         kind === "checkin"
           ? await markCheckinFound(id, token, !resolved)
-          : await resolveHelpRequest(id, token, !resolved);
+          : kind === "request"
+            ? await resolveHelpRequest(id, token, !resolved)
+            : await resolveDamagedReport(id, token, !resolved);
       if (result.ok) {
         router.refresh();
       } else {
@@ -85,9 +93,13 @@ export default function ManageControls({
       ? resolved
         ? "Reabrir búsqueda"
         : "Marcar como encontrado/a"
-      : resolved
-        ? "Reabrir solicitud"
-        : "Marcar como resuelta";
+      : kind === "request"
+        ? resolved
+          ? "Reabrir solicitud"
+          : "Marcar como resuelta"
+        : resolved
+          ? "Reabrir reporte"
+          : "Marcar como resuelto";
 
   return (
     <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4">

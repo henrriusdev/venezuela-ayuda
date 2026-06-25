@@ -61,6 +61,13 @@ export default async function Home() {
             tileBg="#e9f6ef"
           />
           <BigButton
+            href="/reportar-edificio"
+            emoji="🏚️"
+            label="Reportar edificio dañado"
+            sublabel="Reporta daños estructurales"
+            tileBg="#f6dada"
+          />
+          <BigButton
             href="/mapa"
             emoji="🗺️"
             label="Ver mapa de ayuda"

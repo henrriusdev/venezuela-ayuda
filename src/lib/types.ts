@@ -4,6 +4,7 @@ import type {
   OfferCategory,
   UrgencyLevel,
   RequestStatus,
+  DamageSeverity,
 } from "./constants";
 
 // These mirror the privacy-safe public_* views — they intentionally omit
@@ -52,6 +53,20 @@ export interface PublicHelpOffer {
   longitude: number | null;
   availability: string | null;
   available: boolean;
+  created_at: string;
+}
+
+// Mirrors public_damaged_reports (no contact / manage_token).
+export interface PublicDamagedReport {
+  id: string;
+  place_name: string;
+  description: string | null;
+  severity: DamageSeverity;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  photo_url: string | null;
+  status: RequestStatus;
   created_at: string;
 }
 

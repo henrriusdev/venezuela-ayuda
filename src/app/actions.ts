@@ -11,7 +11,13 @@ import {
   parseItems,
   isValidStatus,
 } from "@/lib/validation";
-import { LIMITS, HELP_CATEGORIES, OFFER_CATEGORIES, URGENCY_LEVELS } from "@/lib/constants";
+import {
+  LIMITS,
+  HELP_CATEGORIES,
+  OFFER_CATEGORIES,
+  URGENCY_LEVELS,
+  DAMAGE_SEVERITY,
+} from "@/lib/constants";
 
 export type ActionState = {
   ok: boolean;
@@ -176,6 +182,58 @@ export async function submitHelpRequest(
   redirect(`/solicitud/${id}?nuevo=1&t=${manageToken}`);
 }
 
+// 3b. Damaged building report ----------------------------------------------
+export async function submitDamagedReport(
+  _prev: ActionState,
+  form: FormData
+): Promise<ActionState> {
+  if (!isSupabaseConfigured()) return notConfigured();
+  if (isBot(form)) return { ok: true };
+
+  const limited = rateLimit(await clientKey("damaged"), { limit: 8, windowSec: 60 });
+  if (!limited.ok)
+    return { ok: false, error: `Demasiados envíos. Espera ${limited.retryAfterSec}s.` };
+
+  const place_name = cleanText(form.get("place_name"), LIMITS.place_name);
+  const severity = String(form.get("severity") || "");
+  const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
+
+  const fieldErrors: Record<string, string> = {};
+  if (place_name.length < 2)
+    fieldErrors.place_name = "Escribe el nombre del edificio o lugar.";
+  if (!(severity in DAMAGE_SEVERITY)) fieldErrors.severity = "Selecciona la gravedad.";
+  if (!coords) fieldErrors.location = "Indica la ubicación en el mapa.";
+  if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
+
+  const id = crypto.randomUUID();
+  const manageToken = crypto.randomUUID();
+  try {
+    const supabase = getServerSupabase();
+    const photoUrl = await uploadCheckinPhoto(supabase, id, form.get("photo_data"));
+    const { error } = await supabase.from("damaged_reports").insert({
+      id,
+      place_name,
+      description: cleanOptional(form.get("description"), LIMITS.description),
+      severity,
+      city: cleanOptional(form.get("city"), LIMITS.city),
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
+      contact: cleanOptional(form.get("contact"), LIMITS.phone),
+      photo_url: photoUrl,
+      manage_token: manageToken,
+    });
+    if (error) throw error;
+  } catch {
+    return {
+      ok: false,
+      error: "No pudimos enviar el reporte. Revisa tu conexión e intenta de nuevo.",
+    };
+  }
+
+  revalidatePath("/mapa");
+  redirect(`/edificio/${id}?nuevo=1&t=${manageToken}`);
+}
+
 // 4. Help offer -------------------------------------------------------------
 export async function submitHelpOffer(
   _prev: ActionState,
@@ -220,7 +278,7 @@ export async function submitHelpOffer(
 
 // 5. Reporter-managed resolution -------------------------------------------
 async function verifyManageToken(
-  table: "checkins" | "help_requests",
+  table: "checkins" | "help_requests" | "damaged_reports",
   id: string,
   token: string
 ): Promise<boolean> {
@@ -291,5 +349,33 @@ export async function resolveHelpRequest(
   revalidatePath("/mapa");
   revalidatePath("/buscar");
   revalidatePath(`/solicitud/${id}`);
+  return { ok: true };
+}
+
+export async function resolveDamagedReport(
+  id: string,
+  token: string,
+  resolved: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  if (!limited.ok)
+    return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
+  if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
+  if (!(await verifyManageToken("damaged_reports", id, token)))
+    return { ok: false, error: "No autorizado." };
+  try {
+    const supabase = getServerSupabase();
+    const { error } = await supabase
+      .from("damaged_reports")
+      .update({ status: resolved ? "RESOLVED" : "OPEN" })
+      .eq("id", id);
+    if (error) throw error;
+  } catch {
+    return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
+  }
+  revalidatePath("/mapa");
+  revalidatePath("/buscar");
+  revalidatePath(`/edificio/${id}`);
   return { ok: true };
 }

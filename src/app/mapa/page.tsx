@@ -20,7 +20,15 @@ export default async function Page() {
     <>
       <Header />
       <main id="contenido" className="flex-1">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pt-4">
+        <div className="mx-auto max-w-5xl px-4 pt-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"
+          >
+            ← Volver al inicio
+          </Link>
+        </div>
+        <div className="mx-auto mt-2 flex max-w-5xl items-center justify-between gap-3 px-4">
           <h1 className="text-2xl font-extrabold text-slate-900">🗺️ Mapa de ayuda</h1>
           <Link
             href="/necesito-ayuda"
