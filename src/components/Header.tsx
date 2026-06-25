@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import FlagIcon from "@/components/FlagIcon";
 import LanguageToggle from "@/components/LanguageToggle";
 
 const LINKS = [
@@ -19,7 +18,12 @@ export default function Header() {
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex items-center gap-2.5 font-bold text-[#14212e]">
-          <FlagIcon className="h-9 w-9 rounded-[11px] shadow-sm ring-1 ring-black/5" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.webp"
+            alt=""
+            className="h-9 w-9 rounded-[11px] shadow-sm ring-1 ring-black/5"
+          />
           <span>Hazlo Hoy · Venezuela Ayuda</span>
         </Link>
         <nav className="flex items-center gap-1 text-sm font-medium">

@@ -185,7 +185,26 @@ export default async function Home() {
           </div>
         </div>
 
-        <p className="mt-4">{t("footer.tagline")}</p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.webp"
+            alt="Hazlo Hoy · Venezuela Ayuda"
+            className="h-10 w-10 rounded-xl"
+          />
+          <a
+            href="https://maw.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="maw.dev"
+            className="shrink-0"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/maw-dev.webp" alt="maw.dev" className="h-9 w-9 rounded-lg" />
+          </a>
+        </div>
+
+        <p className="mt-3">{t("footer.tagline")}</p>
       </footer>
     </>
   );
