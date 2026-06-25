@@ -6,6 +6,8 @@ import StatusBadge from "@/components/StatusBadge";
 import SourceBadge from "@/components/SourceBadge";
 import ShareButtons from "@/components/ShareButtons";
 import ManageControls from "@/components/ManageControls";
+import SightingForm from "@/components/SightingForm";
+import SightingsInbox from "@/components/SightingsInbox";
 import { getCheckin } from "@/lib/data";
 import { fullDate, timeAgo } from "@/lib/format";
 import { siteUrl } from "@/lib/share";
@@ -124,6 +126,30 @@ export default async function Page({
             urlToken={t}
             isNew={nuevo === "1"}
           />
+        )}
+
+        {c.status === "LOOKING_FOR_SOMEONE" && !c.found_at && (
+          <div className="mt-6">
+            {c.source ? (
+              <section className="rounded-2xl border border-[#e6ecf2] bg-white p-4">
+                <h2 className="font-semibold text-[#14212e]">
+                  ¿La reconoces o la encontraste?
+                </h2>
+                <p className="mt-1 text-sm text-[#5b6b7b]">
+                  Este reporte proviene de {c.source}. Contacta allí para dar
+                  información:
+                </p>
+                <p className="mt-2">
+                  <SourceBadge source={c.source} url={c.source_url} />
+                </p>
+              </section>
+            ) : (
+              <>
+                <SightingForm checkinId={c.id} />
+                <SightingsInbox checkinId={c.id} urlToken={t} />
+              </>
+            )}
+          </div>
         )}
 
         <p className="mt-3 text-center text-xs text-slate-400">

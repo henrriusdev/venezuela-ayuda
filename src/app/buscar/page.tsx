@@ -68,6 +68,13 @@ export default async function Page({
         </button>
       </form>
 
+      <Link
+        href="/galeria"
+        className="mt-4 block rounded-2xl border border-[#e6ecf2] bg-white p-3 text-center text-sm font-semibold text-[#2563a8]"
+      >
+        📸 ¿No sabes el nombre? Mira las fotos de personas desaparecidas →
+      </Link>
+
       <div className="mt-6">
         {!hasQuery ? (
           <div className="rounded-2xl bg-white p-6 text-center text-slate-600 ring-1 ring-black/5">

@@ -105,6 +105,30 @@ export async function searchHelpRequests(params: {
   return (data ?? []) as PublicHelpRequest[];
 }
 
+// Missing people who have a photo — for the "recognize by face" gallery.
+export async function getMissingWithPhotos(params: {
+  city?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<PublicCheckin[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  const limit = params.limit ?? 60;
+  const offset = params.offset ?? 0;
+  let query = supabase
+    .from("public_checkins")
+    .select("*")
+    .eq("status", "LOOKING_FOR_SOMEONE")
+    .is("found_at", null)
+    .not("photo_url", "is", null)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
+  const { data, error } = await query;
+  if (error) return [];
+  return (data ?? []) as PublicCheckin[];
+}
+
 export async function getCheckin(id: string): Promise<PublicCheckin | null> {
   if (!isSupabaseConfigured() || !isUuid(id)) return null;
   const supabase = getServerSupabase();

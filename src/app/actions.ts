@@ -18,6 +18,7 @@ import {
   URGENCY_LEVELS,
   DAMAGE_SEVERITY,
 } from "@/lib/constants";
+import type { Sighting } from "@/lib/types";
 
 export type ActionState = {
   ok: boolean;
@@ -378,4 +379,67 @@ export async function resolveDamagedReport(
   revalidatePath("/buscar");
   revalidatePath(`/edificio/${id}`);
   return { ok: true };
+}
+
+// --- Sightings (relay) -------------------------------------------------------
+// Anyone who recognizes a missing person can leave a sighting with THEIR own
+// contact. Only the original reporter (with the manage token) can read them.
+export async function submitSighting(
+  checkinId: string,
+  finderName: string,
+  finderContact: string,
+  message: string,
+  website = ""
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  if (cleanText(website, 100)) return { ok: true }; // honeypot
+  const limited = rateLimit(await clientKey("sighting"), { limit: 10, windowSec: 60 });
+  if (!limited.ok) return { ok: false, error: `Espera ${limited.retryAfterSec}s.` };
+  if (!UUID_RE.test(checkinId)) return { ok: false, error: "Solicitud inválida." };
+
+  const name = cleanText(finderName, LIMITS.name);
+  const contact = cleanText(finderContact, LIMITS.phone);
+  const msg = cleanText(message, LIMITS.message);
+  if (!contact && !msg) return { ok: false, error: "Deja un contacto o un mensaje." };
+
+  try {
+    const supabase = getServerSupabase();
+    // Relays only apply to reports created on this site (which have a manage
+    // token). External reports point people to the original source instead.
+    const { data: c } = await supabase
+      .from("checkins")
+      .select("status, found_at, source")
+      .eq("id", checkinId)
+      .maybeSingle();
+    if (!c || c.status !== "LOOKING_FOR_SOMEONE" || c.found_at || c.source)
+      return { ok: false, error: "Este reporte no acepta avisos." };
+
+    const { error } = await supabase.from("sightings").insert({
+      checkin_id: checkinId,
+      finder_name: name || null,
+      finder_contact: contact || null,
+      message: msg || null,
+    });
+    if (error) throw error;
+  } catch {
+    return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
+  }
+  return { ok: true };
+}
+
+export async function fetchSightings(
+  checkinId: string,
+  token: string
+): Promise<{ ok: boolean; sightings?: Sighting[]; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  if (!UUID_RE.test(checkinId) || !token) return { ok: false, error: "No autorizado." };
+  if (!(await verifyManageToken("checkins", checkinId, token)))
+    return { ok: false, error: "No autorizado." };
+  const supabase = getServerSupabase();
+  const { data } = await supabase
+    .from("sightings")
+    .select("id, finder_name, finder_contact, message, created_at")
+    .eq("checkin_id", checkinId)
+    .order("created_at", { ascending: false });
+  return { ok: true, sightings: (data ?? []) as Sighting[] };
 }
