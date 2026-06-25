@@ -76,14 +76,6 @@ export default async function Home() {
           <Stat value={fmt(stats.helpers)} label="Personas ayudando" color="#2563a8" />
         </section>
 
-        <section className="mt-5 rounded-2xl border border-[#e6ecf2] bg-white p-5 text-sm text-[#5b6b7b]">
-          <p className="font-semibold text-[#14212e]">Sin cuenta. Gratis. Rápido.</p>
-          <p className="mt-1">
-            No necesitas registrarte. Tu teléfono nunca se muestra públicamente.
-            Funciona en conexiones lentas y teléfonos sencillos.
-          </p>
-        </section>
-
         <div className="mt-5 grid gap-5">
           <EmergencyPhones />
           <SupportMeasures />
@@ -108,11 +100,15 @@ export default async function Home() {
         </div>
       </main>
 
-      <footer className="mx-auto w-full max-w-2xl px-4 py-6 text-center text-sm text-[#8190a0]">
-        <Link href="/mapa" className="font-semibold text-[#2563a8]">
-          Ver mapa completo ›
-        </Link>
-        <p className="mt-2">Venezuela Ayuda · Plataforma comunitaria de emergencia</p>
+      <footer className="mx-auto w-full max-w-2xl px-4 py-8 text-center text-sm text-[#8190a0]">
+        <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
+          <p className="font-semibold text-[#14212e]">Sin cuenta. Gratis. Rápido.</p>
+          <p className="mt-1">
+            No necesitas registrarte. Tu teléfono nunca se muestra públicamente.
+            Funciona en conexiones lentas y teléfonos sencillos.
+          </p>
+        </div>
+        <p className="mt-4">Venezuela Ayuda · Plataforma comunitaria de emergencia</p>
       </footer>
     </>
   );
