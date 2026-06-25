@@ -12,25 +12,54 @@ import { formatItems } from "@/lib/validation";
 // All reads go through the public_* views, which never include phone/contact.
 
 export async function searchCheckins(params: {
-  name?: string;
+  q?: string;
   city?: string;
   limit?: number;
 }): Promise<PublicCheckin[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getServerSupabase();
-  let q = supabase
+  let query = supabase
     .from("public_checkins")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(params.limit ?? 60);
 
   // ilike with escaped wildcards to avoid pattern-injection.
-  if (params.name) q = q.ilike("name", `%${escapeLike(params.name)}%`);
-  if (params.city) q = q.ilike("city", `%${escapeLike(params.city)}%`);
+  if (params.q)
+    query = query.or(
+      `name.ilike.%${escapeLike(params.q)}%,place_name.ilike.%${escapeLike(params.q)}%`,
+    );
+  if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
 
-  const { data, error } = await q;
+  const { data, error } = await query;
   if (error) return [];
   return (data ?? []) as PublicCheckin[];
+}
+
+export async function searchHelpRequests(params: {
+  q?: string;
+  city?: string;
+  limit?: number;
+}): Promise<PublicHelpRequest[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  let query = supabase
+    .from("public_help_requests")
+    .select("*")
+    .neq("status", "RESOLVED")
+    .order("created_at", { ascending: false })
+    .limit(params.limit ?? 40);
+
+  // ilike with escaped wildcards to avoid pattern-injection.
+  if (params.q)
+    query = query.or(
+      `place_name.ilike.%${escapeLike(params.q)}%,description.ilike.%${escapeLike(params.q)}%`,
+    );
+  if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
+
+  const { data, error } = await query;
+  if (error) return [];
+  return (data ?? []) as PublicHelpRequest[];
 }
 
 export async function getCheckin(id: string): Promise<PublicCheckin | null> {
@@ -45,6 +74,20 @@ export async function getCheckin(id: string): Promise<PublicCheckin | null> {
   return data as PublicCheckin;
 }
 
+export async function getHelpRequest(
+  id: string,
+): Promise<PublicHelpRequest | null> {
+  if (!isSupabaseConfigured() || !isUuid(id)) return null;
+  const supabase = getServerSupabase();
+  const { data, error } = await supabase
+    .from("public_help_requests")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as PublicHelpRequest;
+}
+
 export async function getMapMarkers(): Promise<MapMarker[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getServerSupabase();
@@ -52,7 +95,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
   const [checkins, requests, offers] = await Promise.all([
     supabase
       .from("public_checkins")
-      .select("id,name,status,city,latitude,longitude,message,created_at")
+      .select("id,name,status,city,latitude,longitude,message,created_at,found_at")
       .not("latitude", "is", null)
       .neq("status", "SAFE")
       .order("created_at", { ascending: false })
@@ -89,6 +132,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
         href: `/persona/${c.id}`,
       });
     } else if (c.status === "LOOKING_FOR_SOMEONE") {
+      if (c.found_at) continue;
       markers.push({
         id: `c_${c.id}`,
         kind: "missing",
@@ -113,7 +157,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       lng: r.longitude!,
       title: r.place_name || (HELP_CATEGORIES[r.category]?.label ?? r.category),
       subtitle: subtitle || undefined,
-      href: "/mapa",
+      href: `/solicitud/${r.id}`,
     });
   }
 

@@ -19,6 +19,8 @@ export interface PublicCheckin {
   message: string | null;
   photo_url: string | null;
   created_at: string;
+  found_at: string | null;
+  place_name: string | null;
 }
 
 // A needed tool/equipment with an estimated quantity.

@@ -63,6 +63,7 @@ export async function submitCheckin(
   // back would require a SELECT policy on `checkins`, which we deliberately omit
   // so private phone numbers stay unreadable via the public key.
   const id = crypto.randomUUID();
+  const manageToken = crypto.randomUUID();
   try {
     const supabase = getServerSupabase();
     const { error } = await supabase.from("checkins").insert({
@@ -74,6 +75,8 @@ export async function submitCheckin(
       longitude: coords?.lng ?? null,
       message: cleanOptional(form.get("message"), LIMITS.message),
       phone_private: cleanOptional(form.get("phone"), LIMITS.phone),
+      place_name: cleanOptional(form.get("place_name"), LIMITS.place_name),
+      manage_token: manageToken,
     });
     if (error) throw error;
   } catch {
@@ -85,7 +88,7 @@ export async function submitCheckin(
 
   revalidatePath("/buscar");
   revalidatePath("/mapa");
-  redirect(`/persona/${id}?nuevo=1`);
+  redirect(`/persona/${id}?nuevo=1&t=${manageToken}`);
 }
 
 // 3. Help request -----------------------------------------------------------
@@ -115,9 +118,12 @@ export async function submitHelpRequest(
 
   const items = parseItems(form.get("items"));
 
+  const id = crypto.randomUUID();
+  const manageToken = crypto.randomUUID();
   try {
     const supabase = getServerSupabase();
     const { error } = await supabase.from("help_requests").insert({
+      id,
       category,
       description,
       urgency,
@@ -127,6 +133,7 @@ export async function submitHelpRequest(
       contact: cleanOptional(form.get("contact"), LIMITS.phone),
       place_name: cleanOptional(form.get("place_name"), LIMITS.place_name),
       items: items.length ? items : null,
+      manage_token: manageToken,
     });
     if (error) throw error;
   } catch {
@@ -137,7 +144,7 @@ export async function submitHelpRequest(
   }
 
   revalidatePath("/mapa");
-  return { ok: true };
+  redirect(`/solicitud/${id}?nuevo=1&t=${manageToken}`);
 }
 
 // 4. Help offer -------------------------------------------------------------
@@ -179,5 +186,81 @@ export async function submitHelpOffer(
   }
 
   revalidatePath("/mapa");
+  return { ok: true };
+}
+
+// 5. Reporter-managed resolution -------------------------------------------
+async function verifyManageToken(
+  table: "checkins" | "help_requests",
+  id: string,
+  token: string
+): Promise<boolean> {
+  if (!token) return false;
+  const supabase = getServerSupabase();
+  const { data, error } = await supabase
+    .from(table)
+    .select("manage_token")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.manage_token != null && data.manage_token === token;
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function markCheckinFound(
+  id: string,
+  token: string,
+  found: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  if (!limited.ok)
+    return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
+  if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
+  if (!(await verifyManageToken("checkins", id, token)))
+    return { ok: false, error: "No autorizado." };
+  try {
+    const supabase = getServerSupabase();
+    const { error } = await supabase
+      .from("checkins")
+      .update({ found_at: found ? new Date().toISOString() : null })
+      .eq("id", id);
+    if (error) throw error;
+  } catch {
+    return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
+  }
+  revalidatePath("/mapa");
+  revalidatePath("/buscar");
+  revalidatePath(`/persona/${id}`);
+  return { ok: true };
+}
+
+export async function resolveHelpRequest(
+  id: string,
+  token: string,
+  resolved: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
+  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  if (!limited.ok)
+    return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
+  if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
+  if (!(await verifyManageToken("help_requests", id, token)))
+    return { ok: false, error: "No autorizado." };
+  try {
+    const supabase = getServerSupabase();
+    const { error } = await supabase
+      .from("help_requests")
+      .update({ status: resolved ? "RESOLVED" : "OPEN" })
+      .eq("id", id);
+    if (error) throw error;
+  } catch {
+    return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
+  }
+  revalidatePath("/mapa");
+  revalidatePath("/buscar");
+  revalidatePath(`/solicitud/${id}`);
   return { ok: true };
 }

@@ -76,6 +76,20 @@ export default function CheckinForm({
       </fieldset>
 
       <div>
+        <Label htmlFor="place_name">
+          Edificio o lugar <span className="font-normal text-slate-500">(opcional)</span>
+        </Label>
+        <TextInput
+          id="place_name"
+          name="place_name"
+          maxLength={LIMITS.place_name}
+          placeholder={
+            isMissing ? "Ej: Edificio donde se le vio" : "Ej: Residencias El Parque"
+          }
+        />
+      </div>
+
+      <div>
         <Label htmlFor="city">Ciudad</Label>
         <TextInput
           id="city"

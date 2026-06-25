@@ -1,7 +1,7 @@
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { timeAgo } from "@/lib/format";
-import { CHECKIN_STATUSES } from "@/lib/constants";
+import { CHECKIN_STATUSES, FOUND_BADGE } from "@/lib/constants";
 import type { PublicCheckin } from "@/lib/types";
 
 function initials(name: string): string {
@@ -31,10 +31,20 @@ export default function CheckinCard({ c }: { c: PublicCheckin }) {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-semibold text-[#14212e]">{c.name}</h3>
           <p className="mt-0.5 text-xs text-[#8190a0]">
+            {c.place_name ? `🏢 ${c.place_name} · ` : ""}
             {c.city ? `${c.city} · ` : ""}Actualizado {timeAgo(c.created_at)}
           </p>
         </div>
-        <StatusBadge status={c.status} />
+        {c.found_at ? (
+          <span
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold"
+            style={{ backgroundColor: FOUND_BADGE.tintBg, color: FOUND_BADGE.tintText }}
+          >
+            {FOUND_BADGE.emoji} {FOUND_BADGE.label}
+          </span>
+        ) : (
+          <StatusBadge status={c.status} />
+        )}
       </div>
       {c.message && (
         <p className="mt-3 line-clamp-2 text-sm text-[#5b6b7b]">“{c.message}”</p>

@@ -63,6 +63,14 @@ export const URGENCY_LEVELS = {
 } as const;
 export type UrgencyLevel = keyof typeof URGENCY_LEVELS;
 
+// Shown when a missing-person check-in has been resolved (found_at set).
+export const FOUND_BADGE = {
+  label: "Encontrado/a",
+  emoji: "✅",
+  tintBg: "#eaf3ec",
+  tintText: "#1f7a52",
+} as const;
+
 export const REQUEST_STATUSES = {
   OPEN: { label: "Abierta", color: "#dc2626" },
   IN_PROGRESS: { label: "En proceso", color: "#ca8a04" },

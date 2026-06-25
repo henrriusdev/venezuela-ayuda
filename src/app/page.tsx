@@ -14,10 +14,7 @@ export default async function Home() {
     <>
       <Header />
       <main id="contenido" className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Actions column */}
-          <div>
-        {/* Hero */}
+        {/* Hero (full width, above the two columns) */}
         <section>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[#14212e] sm:text-4xl">
             Venezuela Ayuda
@@ -27,8 +24,11 @@ export default async function Home() {
           </p>
         </section>
 
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          {/* Actions column */}
+          <div>
         {/* Primary actions */}
-        <section className="mt-6 grid gap-3" aria-label="Acciones principales">
+        <section className="grid gap-3" aria-label="Acciones principales">
           <BigButton
             href="/a-salvo"
             emoji="✅"
@@ -84,7 +84,7 @@ export default async function Home() {
           </div>
 
           {/* Map column */}
-          <div className="md:sticky md:top-4 md:self-start">
+          <div className="md:sticky md:top-6 md:self-start">
             <div className="overflow-hidden rounded-2xl border border-[#e6ecf2] bg-white">
               <div className="flex items-center justify-between gap-2 border-b border-[#e6ecf2] px-4 py-3">
                 <span className="text-sm font-semibold text-[#14212e]">🗺️ Mapa de ayuda</span>
@@ -94,7 +94,7 @@ export default async function Home() {
               </div>
               <MapView
                 markers={markers}
-                heightClass="h-[55vh] min-h-[380px] md:h-[calc(100dvh-180px)]"
+                heightClass="h-[55vh] min-h-[380px] md:h-[calc(100dvh-260px)] md:max-h-[640px]"
               />
             </div>
           </div>
