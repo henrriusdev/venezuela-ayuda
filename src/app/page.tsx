@@ -26,11 +26,6 @@ export default async function Home() {
           </p>
         </section>
 
-        {/* Time-sensitive support announcement */}
-        <div className="mt-5">
-          <SupportMeasures />
-        </div>
-
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           {/* Actions column */}
           <div>
@@ -89,8 +84,9 @@ export default async function Home() {
           </p>
         </section>
 
-        <div className="mt-5">
+        <div className="mt-5 grid gap-5">
           <EmergencyPhones />
+          <SupportMeasures />
         </div>
           </div>
 
