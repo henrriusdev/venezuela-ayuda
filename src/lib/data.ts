@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { getServerSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
 import type {
   PublicCheckin,
@@ -408,7 +409,7 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
   }));
 }
 
-export async function getMapMarkers(): Promise<MapMarker[]> {
+async function getMapMarkersUncached(): Promise<MapMarker[]> {
   // Curated relief centers + damaged-building reports are always shown, even if
   // the DB is unavailable. These run in parallel and fail soft.
   const externalMarkers = [reliefCenterMarkers(), await getDamagedBuildingMarkers()].flat();
@@ -519,7 +520,7 @@ const ZERO_STATS: Stats = { safe: 0, missing: 0, found: 0, requests: 0, helpers:
 
 // Lightweight COUNT(*) per category for the landing strip. `head: true` fetches
 // no rows — just the counts.
-export async function getStats(): Promise<Stats> {
+async function getStatsUncached(): Promise<Stats> {
   if (!isSupabaseConfigured()) return ZERO_STATS;
   const supabase = getServerSupabase();
   const count = () => ({ count: "exact" as const, head: true });
@@ -571,3 +572,13 @@ function escapeLike(s: string): string {
 function isUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 }
+
+// Cache the heavy homepage/map data fetches (~thousands of rows) for 60s so
+// re-renders — e.g. the language toggle's router.refresh() — reuse the result
+// instead of re-querying Supabase. Data is locale-independent, so this is safe.
+export const getMapMarkers = unstable_cache(getMapMarkersUncached, ["map-markers"], {
+  revalidate: 60,
+});
+export const getStats = unstable_cache(getStatsUncached, ["home-stats"], {
+  revalidate: 60,
+});

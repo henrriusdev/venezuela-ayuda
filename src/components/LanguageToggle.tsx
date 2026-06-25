@@ -3,22 +3,24 @@
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { setLocale } from "@/i18n/actions";
-import { LOCALES, type Locale } from "@/i18n/config";
+import { LOCALES, LOCALE_COOKIE, type Locale } from "@/i18n/config";
 
-// ES / EN segmented toggle. Stores the choice in a cookie (server action) and
-// refreshes so server components re-render in the new locale.
+function persistLocale(locale: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000;samesite=lax`;
+}
+
+// ES / EN segmented toggle. Sets the locale cookie on the client (no extra
+// server round-trip) and refreshes so server components re-render in the new
+// locale. The heavy homepage/map queries are cached, so the refresh is fast.
 export default function LanguageToggle() {
   const active = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const choose = (locale: Locale) => {
-    if (locale === active) return;
-    startTransition(async () => {
-      await setLocale(locale);
-      router.refresh();
-    });
+    if (locale === active || pending) return;
+    persistLocale(locale);
+    startTransition(() => router.refresh());
   };
 
   return (
@@ -34,8 +36,8 @@ export default function LanguageToggle() {
           onClick={() => choose(locale)}
           aria-pressed={locale === active}
           disabled={pending}
-          className={`rounded-full px-2.5 py-1 uppercase transition ${
-            locale === active ? "bg-[#2563a8] text-white" : "text-[#5b6b7b]"
+          className={`cursor-pointer rounded-full px-2.5 py-1 uppercase transition disabled:cursor-default ${
+            locale === active ? "bg-[#2563a8] text-white" : "text-[#5b6b7b] hover:bg-slate-100"
           }`}
         >
           {locale}
