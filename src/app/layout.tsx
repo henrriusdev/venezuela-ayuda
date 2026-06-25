@@ -20,7 +20,8 @@ const lexend = Lexend({
 });
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://venezuela-ayuda.vercel.app").replace(/\/$/, "");
-const TITLE = "Venezuela Ayuda — Coordinación de emergencia";
+const TITLE = "Hazlo Hoy - Venezuela Ayuda — Coordinación de emergencia";
+const SITE_NAME = "Hazlo Hoy - Venezuela Ayuda";
 const DESCRIPTION =
   "Plataforma comunitaria tras el terremoto en Venezuela: busca o reporta personas desaparecidas, marca a salvo, pide u ofrece ayuda y mira el mapa. Sin cuenta, en español.";
 
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
-  applicationName: "Venezuela Ayuda",
+  applicationName: SITE_NAME,
   manifest: "/manifest.webmanifest",
   keywords: [
     "Venezuela",
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
-    siteName: "Venezuela Ayuda",
+    siteName: SITE_NAME,
     type: "website",
     locale: "es_VE",
     images: [
