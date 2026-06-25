@@ -141,6 +141,34 @@ export default async function Home() {
         </section>
       </main>
 
+      <section
+        aria-label="Fuentes de información"
+        className="mx-auto w-full max-w-5xl px-4 pt-2"
+      >
+        <div className="rounded-2xl border border-[#e6ecf2] bg-white p-4 text-center text-xs leading-relaxed text-[#8190a0]">
+          <span className="font-semibold text-[#5b6b7b]">Fuentes de información:</span>{" "}
+          {[
+            ["https://terremotovenezuela2026.vercel.app", "terremotovenezuela2026"],
+            ["https://desaparecidosterremotovenezuela.com", "desaparecidosterremotovenezuela.com"],
+            ["https://terremotovenezuela.com", "terremotovenezuela.com"],
+            ["https://venezuelatebusca.com", "venezuelatebusca.com"],
+            ["https://terremotovenezuela.app", "terremotovenezuela.app"],
+          ].map(([url, name], i, arr) => (
+            <span key={url}>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#2563a8] hover:underline"
+              >
+                {name}
+              </a>
+              {i < arr.length - 1 ? " · " : ""}
+            </span>
+          ))}
+        </div>
+      </section>
+
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">
         <div className="grid gap-4 text-left md:grid-cols-2">
           <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
