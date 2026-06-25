@@ -326,52 +326,14 @@ async function srcAppEmergencia() {
   return recs;
 }
 
-async function src2026() {
-  const recs = [];
-  const reqs = (await fetchJson("https://terremotovenezuela2026.vercel.app/api/requests")).data || [];
-  for (const q of reqs) {
-    const name = clean(q.person_name, 80) || "Sin nombre";
-    recs.push({
-      table: "checkins",
-      dedupKey: fuzzyKey(name),
-      row: {
-        name, status: "LOOKING_FOR_SOMEONE", city: clean(q.last_seen_area, 80),
-        latitude: VE(q.lat, q.lng) ? q.lat : null, longitude: VE(q.lat, q.lng) ? q.lng : null,
-        message: clean(q.description, 500), phone_private: clean(q.contact_info, 30),
-        place_name: clean(q.last_seen_area, 120),
-        source: "terremotovenezuela2026", source_url: "https://terremotovenezuela2026.vercel.app",
-        external_id: `tv26:${q.id}`,
-      },
-    });
-  }
-  const vids = (await fetchJson("https://terremotovenezuela2026.vercel.app/api/videos")).data || [];
-  for (const v of vids) {
-    if (!["damage", "infrastructure", "evacuation"].includes(v.situation_type)) continue;
-    recs.push({
-      table: "damaged_reports",
-      dedupKey: `${norm(v.area_name)}|${norm(v.title)}`,
-      row: {
-        place_name: clean(v.area_name, 120) || "Zona afectada",
-        description: clean([v.title, v.description].filter(Boolean).join(" · "), 800),
-        severity: "PARTIAL", city: clean(v.area_name, 80),
-        latitude: VE(v.lat, v.lng) ? v.lat : null, longitude: VE(v.lat, v.lng) ? v.lng : null,
-        source: "terremotovenezuela2026",
-        source_url: clean(v.video_url || v.source_url, 500) || "https://terremotovenezuela2026.vercel.app",
-        external_id: `tv26v:${v.id}`,
-      },
-    });
-  }
-  return recs;
-}
-
 // Order matters for dedup: richest/photo-bearing sources first so the kept copy
 // is the most complete.
+// (terremotovenezuela2026 removed — its API now returns 410 Gone.)
 const SOURCES = [
   ["terremotovenezuela.com (edificios)", srcTvComBuildings],
   ["venezuelatebusca.com (desaparecidos)", srcTeBusca],
   ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
   ["terremotovenezuela.app", srcAppEmergencia],
-  ["terremotovenezuela2026", src2026],
 ];
 
 // --- existing keys (idempotency) --------------------------------------------
