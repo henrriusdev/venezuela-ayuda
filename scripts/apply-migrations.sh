@@ -5,7 +5,11 @@
 # string with password; use Supabase's "Session pooler" URI for IPv4/CI).
 set -euo pipefail
 
-: "${SUPABASE_DB_URL:?Set SUPABASE_DB_URL (Supabase → Project Settings → Database → Session pooler URI)}"
+if [ -z "${SUPABASE_DB_URL:-}" ]; then
+  echo "⏭️  SUPABASE_DB_URL not set — skipping auto-apply."
+  echo "    Add the repo secret (Supabase → Project Settings → Database → Session pooler URI) to enable."
+  exit 0
+fi
 
 DIR="$(cd "$(dirname "$0")/../supabase/migrations" && pwd)"
 PSQL=(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -q)
