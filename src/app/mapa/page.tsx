@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Header from "@/components/Header";
+import MapView from "@/components/MapView";
+import { getMapMarkers } from "@/lib/data";
+
+export const metadata: Metadata = {
+  title: "Mapa de ayuda — Venezuela Ayuda",
+  description:
+    "Mapa interactivo: personas a salvo, solicitudes de ayuda urgentes y voluntarios disponibles.",
+};
+
+// Map data changes constantly during an emergency.
+export const revalidate = 20;
+
+export default async function Page() {
+  const markers = await getMapMarkers();
+
+  return (
+    <>
+      <Header />
+      <main id="contenido" className="flex-1">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pt-4">
+          <h1 className="text-2xl font-extrabold text-slate-900">🗺️ Mapa de ayuda</h1>
+          <Link
+            href="/necesito-ayuda"
+            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white"
+          >
+            🆘 Pedir ayuda
+          </Link>
+        </div>
+
+        <div className="mx-auto mt-2 max-w-5xl">
+          <MapView markers={markers} />
+        </div>
+
+        <p className="mx-auto max-w-5xl px-4 py-4 text-center text-sm text-slate-500">
+          Toca un punto para ver detalles. Usa los filtros para mostrar u ocultar categorías.
+        </p>
+      </main>
+    </>
+  );
+}
