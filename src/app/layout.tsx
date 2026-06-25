@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import ConnectivityLayer from "@/components/ConnectivityLayer";
+
+// Google Analytics 4. Override the id via NEXT_PUBLIC_GA_ID; loaded only in
+// production so local/dev traffic isn't counted. afterInteractive = non-blocking.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-52ENT7BNML";
+const GA_ENABLED = Boolean(GA_ID) && process.env.NODE_ENV === "production";
 
 // Lexend is the design system's typeface. next/font self-hosts it (no runtime
 // request to Google) and `display: swap` paints system-font text immediately —
@@ -50,6 +56,21 @@ export default function RootLayout({
         </a>
         <ConnectivityLayer />
         {children}
+
+        {GA_ENABLED && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
