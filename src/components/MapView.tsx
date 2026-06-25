@@ -33,6 +33,7 @@ function toGeoJSON(markers: MapMarker[]) {
         note: m.note ?? "",
         linkLabel: m.linkLabel ?? "",
         approx: m.approx ? "1" : "",
+        color: m.color ?? "",
       },
     })),
   };
@@ -110,17 +111,19 @@ export default function MapView({
           paint: { "text-color": "#ffffff" },
         });
 
-        // Individual points colored by kind.
-        const colorMatch: (string | string[])[] = ["match", ["get", "kind"]];
-        for (const k of ALL_KINDS) colorMatch.push(k, KIND_META[k].color);
-        colorMatch.push("#64748b");
+        // Individual points colored by kind — unless the marker carries its own
+        // `color` (e.g. damaged buildings tinted by severity).
+        const kindColor: (string | string[])[] = ["match", ["get", "kind"]];
+        for (const k of ALL_KINDS) kindColor.push(k, KIND_META[k].color);
+        kindColor.push("#64748b");
+        const colorExpr = ["case", ["==", ["get", "color"], ""], kindColor, ["get", "color"]];
         map.addLayer({
           id: "unclustered",
           type: "circle",
           source: "points",
           filter: ["!", ["has", "point_count"]],
           paint: {
-            "circle-color": colorMatch as unknown as string,
+            "circle-color": colorExpr as unknown as string,
             "circle-radius": 9,
             "circle-stroke-width": 2,
             "circle-stroke-color": "#ffffff",

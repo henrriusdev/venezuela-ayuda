@@ -172,6 +172,7 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
     }`,
     confidence: "Reporte de la comunidad (sin verificar)",
     href: `/edificio/${r.id}`,
+    color: DAMAGE_SEVERITY[r.severity]?.color, // pin colored by severity
   }));
 }
 
