@@ -57,9 +57,9 @@ export interface PublicHelpOffer {
 
 export type LatLng = { lat: number; lng: number };
 
-// Unified shape consumed by the map. Three kinds: places that need help,
-// missing people, and available helpers.
-export type MarkerKind = "need" | "missing" | "helper";
+// Unified shape consumed by the map. Kinds: places that need help, missing
+// people, available helpers, and curated relief/collection centers.
+export type MarkerKind = "need" | "missing" | "helper" | "center";
 
 export interface MapMarker {
   id: string;

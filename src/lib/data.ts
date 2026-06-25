@@ -9,6 +9,47 @@ import type {
 import { HELP_CATEGORIES, OFFER_CATEGORIES } from "@/lib/constants";
 import { formatItems } from "@/lib/validation";
 
+// Curated relief / collection centers ("centros de acopio"). Static, always
+// shown on the map. Coordinates are approximate (the authoritative info is the
+// address in the popup + the "cómo llegar" link). Source: Operación Todos con VZLA.
+const CENTER_ACCEPTS =
+  "Reciben: agua potable, alimentos no perecederos, insumos médicos, ropa y abrigos.";
+
+const RELIEF_CENTERS: Array<{ state: string; address: string; lat: number; lng: number }> = [
+  {
+    state: "Miranda",
+    address: "4ta avenida de Altamira, entre 9na y 10ma transversal; quinta El Bejucal.",
+    lat: 10.4972,
+    lng: -66.8521,
+  },
+  {
+    state: "Aragua",
+    address: "Av. 19 de Abril, C.C. La Capilla, piso 1, local 21. Maracay.",
+    lat: 10.2538,
+    lng: -67.6038,
+  },
+  {
+    state: "Carabobo",
+    address: "Av. Monseñor Adams, El Viñedo. Edificio Talislandia, mezzanina. Valencia.",
+    lat: 10.1878,
+    lng: -68.0009,
+  },
+];
+
+function reliefCenterMarkers(): MapMarker[] {
+  return RELIEF_CENTERS.map((c, i) => ({
+    id: `center_${i}`,
+    kind: "center",
+    lat: c.lat,
+    lng: c.lng,
+    title: `Centro de acopio · ${c.state}`,
+    subtitle: `${c.address} ${CENTER_ACCEPTS}`,
+    href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${c.address} ${c.state} Venezuela`,
+    )}`,
+  }));
+}
+
 // All reads go through the public_* views, which never include phone/contact.
 
 export async function searchCheckins(params: {
@@ -89,7 +130,8 @@ export async function getHelpRequest(
 }
 
 export async function getMapMarkers(): Promise<MapMarker[]> {
-  if (!isSupabaseConfigured()) return [];
+  // Curated relief centers are always shown, even if the DB is unavailable.
+  if (!isSupabaseConfigured()) return reliefCenterMarkers();
   const supabase = getServerSupabase();
 
   const [checkins, requests, offers] = await Promise.all([
@@ -118,7 +160,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       .limit(2000),
   ]);
 
-  const markers: MapMarker[] = [];
+  const markers: MapMarker[] = reliefCenterMarkers();
 
   for (const c of (checkins.data ?? []) as PublicCheckin[]) {
     if (c.status === "NEEDS_HELP") {

@@ -11,6 +11,7 @@ const KIND_META: Record<MarkerKind, { color: string; label: string; emoji: strin
   need: { color: "#e2603a", label: "Necesitan ayuda", emoji: "🆘" },
   missing: { color: "#b5811f", label: "Desaparecidos", emoji: "🔎" },
   helper: { color: "#2563a8", label: "Voluntarios", emoji: "🤝" },
+  center: { color: "#0d9488", label: "Centros de acopio", emoji: "📦" },
 };
 const ALL_KINDS = Object.keys(KIND_META) as MarkerKind[];
 
@@ -134,7 +135,13 @@ export default function MapView({
             <div style="font-weight:700;color:${meta.color}">${meta.emoji} ${escapeHtml(meta.label)}</div>
             <div style="font-weight:600;margin-top:2px">${escapeHtml(p.title)}</div>
             ${p.subtitle ? `<div style="color:#475569;font-size:13px;margin-top:2px">${escapeHtml(p.subtitle)}</div>` : ""}
-            ${p.href ? `<a href="${escapeAttr(p.href)}" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">Ver detalle →</a>` : ""}
+            ${
+              p.href
+                ? p.href.startsWith("http")
+                  ? `<a href="${escapeAttr(p.href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">Cómo llegar →</a>`
+                  : `<a href="${escapeAttr(p.href)}" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">Ver detalle →</a>`
+                : ""
+            }
           </div>`;
           new maplibre.Popup({ closeButton: true, maxWidth: "260px" })
             .setLngLat(coords)
