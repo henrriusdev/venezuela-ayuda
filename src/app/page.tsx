@@ -2,6 +2,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import BigButton from "@/components/BigButton";
 import MapView from "@/components/MapView";
+import EmergencyPhones from "@/components/EmergencyPhones";
+import SupportMeasures from "@/components/SupportMeasures";
 import { getStats, getMapMarkers } from "@/lib/data";
 
 export const revalidate = 60;
@@ -23,6 +25,11 @@ export default async function Home() {
             Conectando personas, familias y ayuda durante la emergencia.
           </p>
         </section>
+
+        {/* Time-sensitive support announcement */}
+        <div className="mt-5">
+          <SupportMeasures />
+        </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           {/* Actions column */}
@@ -81,6 +88,10 @@ export default async function Home() {
             Funciona en conexiones lentas y teléfonos sencillos.
           </p>
         </section>
+
+        <div className="mt-5">
+          <EmergencyPhones />
+        </div>
           </div>
 
           {/* Map column */}
