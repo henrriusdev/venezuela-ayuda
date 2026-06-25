@@ -10,6 +10,7 @@
 // Requires migration 0007 applied. Reads keys from .env.local.
 
 import { readFileSync } from "node:fs";
+import { norm, fuzzyKey, clusterNames } from "./dedup-lib.mjs";
 
 const DRY = process.argv.includes("--dry");
 const DEDUP = process.argv.includes("--dedup"); // run the fuzzy dedup cleanup pass
@@ -40,20 +41,9 @@ const REST = `${SUPA_URL}/rest/v1`;
 const H = { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "application/json" };
 
 // --- helpers -----------------------------------------------------------------
-const stripAccents = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
-const norm = (s) => stripAccents(s).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+// norm / fuzzyKey / clusterKeys viven en ./dedup-lib.mjs (puro, testeable con node --test).
 const clean = (s, n = 500) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n) || null;
 
-// Fuzzy name key for aggressive dedup: drop accents + stopwords + short tokens,
-// sort the remaining tokens. So "Pérez, Juan" ≈ "juan perez" ≈ "Juan A. Pérez".
-// Requires >=2 significant tokens (single-name rows keep their exact key to
-// avoid merging different people who share one common name).
-const STOP = new Set(["de","del","la","las","el","los","y","con","un","una","su","a","en","o","e","da","do","san","santa","sr","sra","srta","don","dona","nino","nina","bebe","ano","anos","sus","al","the","and"]);
-function fuzzyKey(name) {
-  const toks = norm(name).split(" ").filter((t) => t.length >= 3 && !STOP.has(t));
-  if (toks.length >= 2) return `mp:${[...new Set(toks)].sort().join(" ")}`;
-  return `mp:${norm(name)}`;
-}
 const VE = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && lat > 0 && lat < 16 && lng > -74 && lng < -59;
 
 // Venezuela city/zone centroids (coast + Caracas + major cities). Used to place
@@ -481,63 +471,65 @@ async function main() {
 // richest record (photo > longer message > earliest), deletes the rest.
 async function dedupExisting() {
   console.log(`Fuzzy dedup ${DRY ? "(DRY RUN)" : ""} → ${SUPA_URL}\n`);
-  const rows = [];
-  for (let from = 0; ; from += 1000) {
-    const r = await fetch(
-      `${REST}/checkins?select=id,name,photo_url,message,created_at,found_at,source&source=not.is.null`,
-      { headers: { ...H, Range: `${from}-${from + 999}` } }
-    );
-    if (!r.ok) break;
-    const chunk = await r.json();
-    if (!Array.isArray(chunk) || !chunk.length) break;
-    rows.push(...chunk);
-    if (chunk.length < 1000) break;
-  }
-  console.log(`scanned ${rows.length} external person rows`);
-
-  const groups = new Map();
-  for (const row of rows) {
-    const k = fuzzyKey(row.name || "");
-    (groups.get(k) || groups.set(k, []).get(k)).push(row);
-  }
-
-  // Keep the richest record: photo first, then the most-detailed source
-  // (desaparecidos… has the most info), then longer message.
-  const SOURCE_RANK = {
+  // Personas: foto > fuente más detallada > mensaje más largo.
+  const PERSON_RANK = {
     "desaparecidosterremotovenezuela.com": 5,
     "venezuelatebusca.com": 4,
     "terremotovenezuela.app": 3,
     "terremotovenezuela2026": 2,
     "terremotovenezuela.com": 1,
   };
-  const score = (r) =>
-    (r.photo_url ? 100000 : 0) +
-    (SOURCE_RANK[r.source] ?? 0) * 1000 +
-    (r.message ? r.message.length : 0);
+  await dedupTable({
+    table: "checkins",
+    select: "id,name,photo_url,message,created_at,found_at,source",
+    nameOf: (r) => r.name || "",
+    score: (r) => (r.photo_url ? 1e5 : 0) + (PERSON_RANK[r.source] ?? 0) * 1000 + (r.message ? r.message.length : 0),
+  });
+  // Edificios dañados: foto > descripción más larga. (Antes no se dedup-eaban.)
+  await dedupTable({
+    table: "damaged_reports",
+    select: "id,place_name,photo_url,description,created_at,source",
+    nameOf: (r) => r.place_name || "",
+    score: (r) => (r.photo_url ? 1e5 : 0) + (r.description ? r.description.length : 0),
+  });
+}
+
+// Dedup genérico de una tabla: agrupa nombres por identidad probable (clusterNames,
+// confianza >= 0.95 con veto de discriminadores) y borra duplicados dejando el
+// registro más rico (score). Conservador a propósito: ante la duda, deja el duplicado.
+async function dedupTable({ table, select, nameOf, score }) {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await fetch(`${REST}/${table}?select=${select}&source=not.is.null`, { headers: { ...H, Range: `${from}-${from + 999}` } });
+    if (!r.ok) break;
+    const chunk = await r.json();
+    if (!Array.isArray(chunk) || !chunk.length) break;
+    rows.push(...chunk);
+    if (chunk.length < 1000) break;
+  }
+  console.log(`[${table}] scanned ${rows.length} rows`);
+
+  const { clusters, skippedBuckets } = clusterNames(rows.map(nameOf), 0.95);
+  if (skippedBuckets) console.log(`[${table}] ${skippedBuckets} token bucket(s) too large to compare — left untouched (not silently merged)`);
+
   const deleteIds = [];
   let dupGroups = 0;
-  for (const list of groups.values()) {
-    if (list.length < 2) continue;
+  for (const idxs of clusters) {
+    if (idxs.length < 2) continue;
     dupGroups++;
-    list.sort((a, b) => score(b) - score(a) || a.created_at.localeCompare(b.created_at));
+    const list = idxs.map((i) => rows[i]).sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)));
     for (const r of list.slice(1)) deleteIds.push(r.id);
   }
-  console.log(`${dupGroups} duplicate groups → ${deleteIds.length} rows to remove`);
+  console.log(`[${table}] ${dupGroups} duplicate groups → ${deleteIds.length} rows to remove`);
 
-  if (DRY || !deleteIds.length) {
-    console.log(DRY ? "(dry run — nothing deleted)" : "nothing to remove");
-    return;
-  }
+  if (DRY || !deleteIds.length) { console.log(DRY ? "  (dry run — nothing deleted)" : "  nothing to remove"); return; }
   for (let i = 0; i < deleteIds.length; i += 80) {
     const ids = deleteIds.slice(i, i + 80);
-    const r = await fetch(`${REST}/checkins?id=in.(${ids.join(",")})`, {
-      method: "DELETE",
-      headers: { ...H, Prefer: "return=minimal" },
-    });
+    const r = await fetch(`${REST}/${table}?id=in.(${ids.join(",")})`, { method: "DELETE", headers: { ...H, Prefer: "return=minimal" } });
     if (!r.ok) throw new Error(`delete: ${r.status} ${await r.text()}`);
-    process.stdout.write(`  deleted ${Math.min(i + 80, deleteIds.length)}/${deleteIds.length}\r`);
+    process.stdout.write(`  [${table}] deleted ${Math.min(i + 80, deleteIds.length)}/${deleteIds.length}\r`);
   }
-  console.log("\nDone.");
+  console.log(`\n[${table}] done.`);
 }
 
 (DEDUP ? dedupExisting() : main()).catch((e) => { console.error(e); process.exit(1); });
