@@ -5,6 +5,7 @@ import { submitCheckin, type ActionState } from "@/app/actions";
 import { CHECKIN_STATUSES, LIMITS, type CheckinStatus } from "@/lib/constants";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
 import LocationPicker from "@/components/LocationPicker";
+import PhotoInput from "@/components/PhotoInput";
 import SubmitButton from "@/components/SubmitButton";
 
 const initial: ActionState = { ok: false };
@@ -131,6 +132,12 @@ export default function CheckinForm({
         <p className="mt-1 text-sm text-slate-500">
           🔒 Nunca mostramos tu teléfono públicamente.
         </p>
+      </div>
+
+      <div>
+        <PhotoInput
+          label={isMissing ? "Foto de la persona (opcional)" : "Foto (opcional)"}
+        />
       </div>
 
       <div>

@@ -75,6 +75,15 @@ export default async function Page({
             )}
           </div>
 
+          {c.photo_url && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={c.photo_url}
+              alt={`Foto de ${c.name}`}
+              className="mt-4 max-h-80 w-full rounded-xl object-cover ring-1 ring-slate-200"
+            />
+          )}
+
           {c.place_name && <p className="mt-2 text-slate-600">🏢 {c.place_name}</p>}
           {c.city && <p className="mt-2 text-slate-600">📍 {c.city}</p>}
 

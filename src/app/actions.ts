@@ -33,6 +33,33 @@ function isBot(form: FormData): boolean {
   return cleanText(form.get("website"), 100).length > 0;
 }
 
+// Decode a (already client-downscaled) JPEG/PNG/WebP data URL and upload it to
+// the public photo bucket. Non-blocking: returns null on any problem so a failed
+// upload never blocks the report itself.
+async function uploadCheckinPhoto(
+  supabase: ReturnType<typeof getServerSupabase>,
+  id: string,
+  dataUrl: FormDataEntryValue | null
+): Promise<string | null> {
+  if (typeof dataUrl !== "string" || !dataUrl) return null;
+  const m = dataUrl.match(/^data:(image\/(jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!m) return null;
+  const contentType = m[1];
+  const ext = m[2] === "jpeg" ? "jpg" : m[2];
+  const buffer = Buffer.from(m[3], "base64");
+  if (buffer.byteLength < 100 || buffer.byteLength > 3_000_000) return null;
+  try {
+    const path = `${id}.${ext}`;
+    const { error } = await supabase.storage
+      .from("checkin-photos")
+      .upload(path, buffer, { contentType, upsert: true });
+    if (error) return null;
+    return supabase.storage.from("checkin-photos").getPublicUrl(path).data.publicUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // 1. Safety check-in --------------------------------------------------------
 export async function submitCheckin(
   _prev: ActionState,
@@ -66,6 +93,7 @@ export async function submitCheckin(
   const manageToken = crypto.randomUUID();
   try {
     const supabase = getServerSupabase();
+    const photoUrl = await uploadCheckinPhoto(supabase, id, form.get("photo_data"));
     const { error } = await supabase.from("checkins").insert({
       id,
       name,
@@ -76,6 +104,7 @@ export async function submitCheckin(
       message: cleanOptional(form.get("message"), LIMITS.message),
       phone_private: cleanOptional(form.get("phone"), LIMITS.phone),
       place_name: cleanOptional(form.get("place_name"), LIMITS.place_name),
+      photo_url: photoUrl,
       manage_token: manageToken,
     });
     if (error) throw error;

@@ -76,12 +76,53 @@ function jitter(seed: string): [number, number] {
   return [a, b];
 }
 
-function geocode(city: string, zone: string, seed: string): [number, number] | null {
+// Online geocoder (OpenStreetMap Nominatim — keyless). Cached for a day per
+// unique query via the Next data cache, so we hit it at most ~once/day/address
+// and stay polite. Returns null on any failure → caller falls back to centroid.
+async function geocodeOnline(query: string): Promise<[number, number] | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ve&q=${encodeURIComponent(
+      query
+    )}`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "VenezuelaAyuda/1.0 (community emergency map)" },
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return null;
+    const arr = (await res.json()) as Array<{ lat: string; lon: string }>;
+    if (!Array.isArray(arr) || !arr.length) return null;
+    const lat = parseFloat(arr[0].lat);
+    const lng = parseFloat(arr[0].lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    // Sanity: inside Venezuela's bounding box.
+    if (lat < 0 || lat > 16 || lng < -74 || lng > -59) return null;
+    return [lat, lng];
+  } catch {
+    return null;
+  }
+}
+
+function centroidBase(city: string, zone: string): [number, number] | null {
   const z = norm(zone);
   const c = norm(city);
+  for (const [key, lat, lng] of ZONE_COORDS) if (z.includes(key)) return [lat, lng];
+  for (const [key, lat, lng] of CITY_COORDS) if (c.includes(key)) return [lat, lng];
+  return null;
+}
+
+// Best available location: online zone geocode → online city geocode → hardcoded
+// centroid. None are building-exact, so a small jitter is always applied to keep
+// multiple reports in one area from stacking on a single pixel.
+async function locate(
+  city: string,
+  zone: string,
+  seed: string
+): Promise<[number, number] | null> {
+  const zoneQuery = zone.split("/")[0].trim();
   let base: [number, number] | null = null;
-  for (const [key, lat, lng] of ZONE_COORDS) if (z.includes(key)) { base = [lat, lng]; break; }
-  if (!base) for (const [key, lat, lng] of CITY_COORDS) if (c.includes(key)) { base = [lat, lng]; break; }
+  if (zoneQuery) base = await geocodeOnline(`${zoneQuery}, ${city}, Venezuela`);
+  if (!base && city) base = await geocodeOnline(`${city}, Venezuela`);
+  if (!base) base = centroidBase(city, zone);
   if (!base) return null;
   const [da, db] = jitter(seed);
   return [base[0] + da, base[1] + db];
@@ -115,35 +156,39 @@ export async function getDamagedBuildingMarkers(): Promise<MapMarker[]> {
   const iNote = col("nota");
   if (iBuilding < 0) return [];
 
-  const markers: MapMarker[] = [];
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    const get = (i: number) => (i >= 0 && i < row.length ? row[i].trim() : "");
-    const building = get(iBuilding);
-    const zone = get(iZone);
-    const city = get(iCity);
-    if (!building && !zone) continue;
+  const dataRows = rows.slice(1);
+  const markers = await Promise.all(
+    dataRows.map(async (row, idx): Promise<MapMarker | null> => {
+      const r = idx + 1;
+      const get = (i: number) => (i >= 0 && i < row.length ? row[i].trim() : "");
+      const building = get(iBuilding);
+      const zone = get(iZone);
+      const city = get(iCity);
+      if (!building && !zone) return null;
 
-    const coords = geocode(city, zone, `${building}|${zone}|${r}`);
-    if (!coords) continue;
+      const coords = await locate(city, zone, `${building}|${zone}|${r}`);
+      if (!coords) return null;
 
-    const report = get(iReport);
-    const firstUrl = get(iSearch).split(/\s+/).find((s) => s.startsWith("http")) || "";
+      const report = get(iReport);
+      const firstUrl = get(iSearch).split(/\s+/).find((s) => s.startsWith("http")) || "";
 
-    markers.push({
-      id: `dmg_${r}`,
-      kind: "damaged",
-      lat: coords[0],
-      lng: coords[1],
-      title: building || zone,
-      subtitle: [report, [zone, city].filter(Boolean).join(", ")].filter(Boolean).join(" — "),
-      confidence: get(iVerif) || undefined,
-      source: get(iSource) || undefined,
-      note: get(iNote) || undefined,
-      href: firstUrl,
-      linkLabel: firstUrl ? "Ver fuente en X →" : undefined,
-      approx: true,
-    });
-  }
-  return markers;
+      return {
+        id: `dmg_${r}`,
+        kind: "damaged",
+        lat: coords[0],
+        lng: coords[1],
+        title: building || zone,
+        subtitle: [report, [zone, city].filter(Boolean).join(", ")]
+          .filter(Boolean)
+          .join(" — "),
+        confidence: get(iVerif) || undefined,
+        source: get(iSource) || undefined,
+        note: get(iNote) || undefined,
+        href: firstUrl,
+        linkLabel: firstUrl ? "Ver fuente en X →" : undefined,
+        approx: true,
+      };
+    })
+  );
+  return markers.filter((m): m is MapMarker => m !== null);
 }

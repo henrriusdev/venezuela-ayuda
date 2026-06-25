@@ -21,13 +21,22 @@ export default function CheckinCard({ c }: { c: PublicCheckin }) {
       className="block rounded-2xl border border-[#e6ecf2] bg-white p-4 transition hover:border-[#c9d6e3]"
     >
       <div className="flex items-center gap-3.5">
-        <span
-          aria-hidden
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-base font-semibold"
-          style={{ backgroundColor: s.tintBg, color: s.tintText }}
-        >
-          {initials(c.name)}
-        </span>
+        {c.photo_url ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={c.photo_url}
+            alt=""
+            className="h-12 w-12 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-base font-semibold"
+            style={{ backgroundColor: s.tintBg, color: s.tintText }}
+          >
+            {initials(c.name)}
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-semibold text-[#14212e]">{c.name}</h3>
           <p className="mt-0.5 text-xs text-[#8190a0]">
