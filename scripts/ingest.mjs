@@ -100,6 +100,8 @@ async function fetchJson(url, headers = {}) {
   return r.json();
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 // --- source adapters ---------------------------------------------------------
 // Each returns { table, row, dedupKey }. row already shaped for our schema.
 
@@ -129,16 +131,35 @@ async function srcTvComBuildings() {
   }));
 }
 
-async function pagedRange(base, key, pageSize = 1000) {
+// Paginated Supabase range fetch with retries + backoff + inter-page delay.
+// Their upstream sometimes returns a non-JSON timeout body; we retry, and on
+// repeated failure we keep whatever we already have (partial > nothing).
+async function pagedRange(base, key, pageSize = 500) {
   const out = [];
   for (let from = 0; ; from += pageSize) {
-    const r = await fetch(`${base}`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}`, Range: `${from}-${from + pageSize - 1}` },
-    });
-    const chunk = await r.json();
-    if (!Array.isArray(chunk) || !chunk.length) break;
+    let chunk = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const r = await fetch(base, {
+          headers: { apikey: key, Authorization: `Bearer ${key}`, Range: `${from}-${from + pageSize - 1}` },
+        });
+        if (!r.ok) { await sleep(1000 * (attempt + 1)); continue; }
+        const j = await r.json();
+        if (!Array.isArray(j)) { await sleep(1000 * (attempt + 1)); continue; }
+        chunk = j;
+        break;
+      } catch {
+        await sleep(1000 * (attempt + 1));
+      }
+    }
+    if (chunk === null) {
+      console.log(`  (partial: stopped at offset ${from} after retries)`);
+      break;
+    }
+    if (!chunk.length) break;
     out.push(...chunk);
     if (chunk.length < pageSize) break;
+    await sleep(250);
   }
   return out;
 }
@@ -179,13 +200,27 @@ async function srcTeBusca() {
 async function srcDesaparecidos() {
   const out = [];
   for (let page = 1; ; page++) {
-    const d = await fetchJson(
-      `https://desaparecidos-terremoto-api.theempire.tech/api/personas?page=${page}&pageSize=200`
-    );
+    // Retry with backoff (longer on 429); inter-page delay to avoid rate limits.
+    let d = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const r = await fetch(
+          `https://desaparecidos-terremoto-api.theempire.tech/api/personas?page=${page}&pageSize=200`
+        );
+        if (r.status === 429) { await sleep(2000 * (attempt + 1)); continue; }
+        if (!r.ok) { await sleep(1000 * (attempt + 1)); continue; }
+        d = await r.json();
+        break;
+      } catch {
+        await sleep(1000 * (attempt + 1));
+      }
+    }
+    if (!d) { console.log(`  (partial: stopped at page ${page} after retries)`); break; }
     const items = d.items || [];
     if (!items.length) break;
     out.push(...items);
     if (page >= (d.totalPages || 1)) break;
+    await sleep(400);
   }
   return out.map((p) => {
     const name = clean(p.nombre, 80) || "Sin nombre";
