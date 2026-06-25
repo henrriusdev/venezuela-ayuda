@@ -61,6 +61,32 @@ export default function DonateButton() {
               Venezuela; tu aporte ayuda a llevar asistencia a las personas
               afectadas.
             </p>
+            <div className="mt-3 rounded-xl bg-[#f5f8fb] p-3 text-xs leading-relaxed text-[#5b6b7b]">
+              <p className="font-semibold text-[#14212e]">Transparencia y seguridad</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4">
+                <li>
+                  El pago se procesa de forma segura con <strong>Stripe</strong>; los
+                  datos de tu tarjeta no pasan por este sitio.
+                </li>
+                <li>
+                  La VACC opera desde <strong>1991</strong> en Miami y sus reportes
+                  financieros ante el IRS (Formulario&nbsp;990) son{" "}
+                  <a
+                    href="https://projects.propublica.org/nonprofits/organizations/650282287"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#2563a8] hover:underline"
+                  >
+                    de acceso público
+                  </a>
+                  , así puedes verificar a dónde va el dinero.
+                </li>
+                <li>
+                  Es una organización sin fines de lucro <strong>501(c)(6)</strong>; en
+                  EE.&nbsp;UU. las donaciones no son deducibles de impuestos.
+                </li>
+              </ul>
+            </div>
             <a
               href={ABOUT_URL}
               target="_blank"
