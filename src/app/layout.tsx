@@ -19,19 +19,61 @@ const lexend = Lexend({
   variable: "--font-lexend",
 });
 
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://venezuela-ayuda.vercel.app").replace(/\/$/, "");
+const TITLE = "Venezuela Ayuda — Coordinación de emergencia";
+const DESCRIPTION =
+  "Plataforma comunitaria tras el terremoto en Venezuela: busca o reporta personas desaparecidas, marca a salvo, pide u ofrece ayuda y mira el mapa. Sin cuenta, en español.";
+
 export const metadata: Metadata = {
-  title: "Venezuela Ayuda — Coordinación de emergencia",
-  description:
-    "Conecta personas, familias y ayuda durante la emergencia. Márcate a salvo, busca a alguien, pide o ofrece ayuda.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   applicationName: "Venezuela Ayuda",
   manifest: "/manifest.webmanifest",
+  keywords: [
+    "Venezuela",
+    "terremoto",
+    "sismo",
+    "desaparecidos",
+    "personas desaparecidas",
+    "emergencia",
+    "ayuda",
+    "rescate",
+    "La Guaira",
+    "Caracas",
+    "edificios dañados",
+    "centros de acopio",
+    "Venezuela Ayuda",
+  ],
+  authors: [{ name: "Venezuela Ayuda" }],
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Venezuela Ayuda",
-    description: "Conecta personas, familias y ayuda durante la emergencia.",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Venezuela Ayuda",
     type: "website",
     locale: "es_VE",
+    images: [
+      {
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Venezuela Ayuda — coordinación de emergencia",
+      },
+    ],
   },
-  robots: { index: true, follow: true },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 export const viewport: Viewport = {
