@@ -210,7 +210,10 @@ async function srcAppEmergencia() {
         phone_private: clean(m.contact, 30),
         photo_url: m.photoUrl ? `https://terremotovenezuela.app${m.photoUrl}` : null,
         place_name: clean(m.lastSeen, 120),
-        found_at: m.status === "found" ? m.resolvedAt || new Date().toISOString() : null,
+        found_at:
+          m.status === "found"
+            ? new Date(m.resolvedAt || Date.now()).toISOString()
+            : null,
         source: "terremotovenezuela.app",
         source_url: "https://terremotovenezuela.app",
         external_id: `app:m:${m.id}`,
@@ -330,9 +333,19 @@ async function existingSet(table, col) {
   return set;
 }
 
+// Fixed column set per table. PostgREST bulk insert requires every object in a
+// batch to have identical keys, and rejects unknown columns — so we project
+// each row onto exactly these columns (null-filling) before sending.
+const COLS = {
+  checkins: ["name", "status", "city", "latitude", "longitude", "message", "phone_private", "photo_url", "place_name", "found_at", "source", "source_url", "external_id", "dedup_key"],
+  damaged_reports: ["place_name", "description", "severity", "city", "latitude", "longitude", "photo_url", "source", "source_url", "external_id", "dedup_key"],
+  help_requests: ["category", "description", "urgency", "city", "latitude", "longitude", "place_name", "source", "source_url", "external_id"],
+};
+const project = (table, row) => Object.fromEntries(COLS[table].map((c) => [c, row[c] ?? null]));
+
 async function insertBatch(table, rows) {
   for (let i = 0; i < rows.length; i += 500) {
-    const batch = rows.slice(i, i + 500);
+    const batch = rows.slice(i, i + 500).map((r) => project(table, r));
     const r = await fetch(`${REST}/${table}`, {
       method: "POST",
       headers: { ...H, Prefer: "return=minimal" },
