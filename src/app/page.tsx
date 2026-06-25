@@ -32,10 +32,10 @@ export default async function Home() {
         {/* Primary actions */}
         <section className="grid gap-3" aria-label="Acciones principales">
           <BigButton
-            href="https://hazlohoy.org/terremoto-caracas/"
+            href="https://donate.stripe.com/eVq14m62u9BRdpm4Xw2sM02"
             emoji="❤️"
             label="Donar"
-            sublabel="Apoya la respuesta al terremoto vía Hazlo Hoy"
+            sublabel="Apoya la respuesta al terremoto en Venezuela"
             highlight
           />
           <BigButton
