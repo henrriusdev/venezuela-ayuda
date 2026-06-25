@@ -159,7 +159,7 @@ async function srcTeBusca() {
       dedupKey: fuzzyKey(name),
       row: {
         name,
-        status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
         city: clean(p.ultima_ubicacion, 80),
         latitude: g?.lat ?? null,
         longitude: g?.lng ?? null,
@@ -196,7 +196,7 @@ async function srcDesaparecidos() {
       dedupKey: fuzzyKey(name),
       row: {
         name,
-        status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
         city: clean(p.ubicacion, 80),
         latitude: g?.lat ?? null,
         longitude: g?.lng ?? null,
@@ -224,7 +224,7 @@ async function srcAppEmergencia() {
       dedupKey: fuzzyKey(name),
       row: {
         name,
-        status: m.status === "found" ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
         city: clean(m.lastSeen, 80),
         latitude: g?.lat ?? null,
         longitude: g?.lng ?? null,
