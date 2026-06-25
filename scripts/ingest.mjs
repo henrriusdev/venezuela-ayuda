@@ -484,7 +484,7 @@ async function dedupExisting() {
   const rows = [];
   for (let from = 0; ; from += 1000) {
     const r = await fetch(
-      `${REST}/checkins?select=id,name,photo_url,message,created_at,found_at&source=not.is.null`,
+      `${REST}/checkins?select=id,name,photo_url,message,created_at,found_at,source&source=not.is.null`,
       { headers: { ...H, Range: `${from}-${from + 999}` } }
     );
     if (!r.ok) break;
@@ -501,7 +501,19 @@ async function dedupExisting() {
     (groups.get(k) || groups.set(k, []).get(k)).push(row);
   }
 
-  const score = (r) => (r.photo_url ? 1000 : 0) + (r.message ? r.message.length : 0);
+  // Keep the richest record: photo first, then the most-detailed source
+  // (desaparecidos… has the most info), then longer message.
+  const SOURCE_RANK = {
+    "desaparecidosterremotovenezuela.com": 5,
+    "venezuelatebusca.com": 4,
+    "terremotovenezuela.app": 3,
+    "terremotovenezuela2026": 2,
+    "terremotovenezuela.com": 1,
+  };
+  const score = (r) =>
+    (r.photo_url ? 100000 : 0) +
+    (SOURCE_RANK[r.source] ?? 0) * 1000 +
+    (r.message ? r.message.length : 0);
   const deleteIds = [];
   let dupGroups = 0;
   for (const list of groups.values()) {
