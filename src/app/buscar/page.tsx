@@ -37,7 +37,7 @@ export default async function Page({
     <PageShell
       emoji="🔎"
       title="Buscar persona"
-      intro="Busca por nombre, edificio o ciudad para ver si alguien se reportó."
+      intro="Busca por nombre, edificio o ciudad para ver si alguien se reportó. ¿No la encuentras? Aquí también puedes reportarla como desaparecida."
     >
       <form method="get" className="space-y-3" role="search">
         <div className="grid gap-3 sm:grid-cols-2">
