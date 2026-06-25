@@ -3,29 +3,43 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Server-only Supabase client.
 //
-// Reads/writes go through here so the service-role key (and therefore private
-// phone numbers) never reach the browser. If the service-role key is absent we
-// fall back to the anon key — the app still works because RLS allows anon
-// inserts and the public_* views expose only non-sensitive columns.
+// Reads/writes go through here so a secret key (and therefore private phone
+// numbers) never reach the browser. We prefer a secret/service-role key when
+// present (it bypasses RLS, so all writes are server-controlled). Otherwise we
+// fall back to the publishable/anon key — the app still works because RLS
+// allows inserts and the public_* views expose only non-sensitive columns.
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Server-side secret key (new `sb_secret_...` format or legacy service-role JWT).
+const secretKey =
+  process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Public client key (new `sb_publishable_...` format or legacy anon JWT).
+const publicKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 let cached: SupabaseClient | null = null;
 
+// True when a secret/service-role key is configured — writes bypass RLS and we
+// can read back inserted rows.
+export function hasSecretKey(): boolean {
+  return Boolean(secretKey);
+}
+
 export function isSupabaseConfigured(): boolean {
-  return Boolean(url && (serviceKey || anonKey));
+  return Boolean(url && (secretKey || publicKey));
 }
 
 export function getServerSupabase(): SupabaseClient {
   if (!isSupabaseConfigured()) {
     throw new Error(
-      "Supabase no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (o NEXT_PUBLIC_SUPABASE_ANON_KEY)."
+      "Supabase no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SECRET_KEY (o NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
     );
   }
   if (cached) return cached;
-  cached = createClient(url!, (serviceKey || anonKey)!, {
+  cached = createClient(url!, (secretKey || publicKey)!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return cached;

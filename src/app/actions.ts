@@ -56,24 +56,23 @@ export async function submitCheckin(
 
   const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
 
-  let id: string;
+  // Generate the id ourselves so we don't need to read the row back. Reading it
+  // back would require a SELECT policy on `checkins`, which we deliberately omit
+  // so private phone numbers stay unreadable via the public key.
+  const id = crypto.randomUUID();
   try {
     const supabase = getServerSupabase();
-    const { data, error } = await supabase
-      .from("checkins")
-      .insert({
-        name,
-        status,
-        city: cleanOptional(form.get("city"), LIMITS.city),
-        latitude: coords?.lat ?? null,
-        longitude: coords?.lng ?? null,
-        message: cleanOptional(form.get("message"), LIMITS.message),
-        phone_private: cleanOptional(form.get("phone"), LIMITS.phone),
-      })
-      .select("id")
-      .single();
-    if (error || !data) throw error;
-    id = data.id;
+    const { error } = await supabase.from("checkins").insert({
+      id,
+      name,
+      status,
+      city: cleanOptional(form.get("city"), LIMITS.city),
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
+      message: cleanOptional(form.get("message"), LIMITS.message),
+      phone_private: cleanOptional(form.get("phone"), LIMITS.phone),
+    });
+    if (error) throw error;
   } catch {
     return {
       ok: false,
