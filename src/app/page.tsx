@@ -114,6 +114,7 @@ export default async function Home() {
               <MapView
                 markers={markers}
                 heightClass="h-[55vh] min-h-[380px] md:h-[calc(100dvh-260px)] md:max-h-[640px]"
+                initialZoom={5}
               />
             </div>
           </div>

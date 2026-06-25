@@ -42,9 +42,11 @@ function toGeoJSON(markers: MapMarker[]) {
 export default function MapView({
   markers,
   heightClass = "h-[70vh] min-h-[420px]",
+  initialZoom = DEFAULT_ZOOM,
 }: {
   markers: MapMarker[];
   heightClass?: string;
+  initialZoom?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
@@ -69,7 +71,7 @@ export default function MapView({
         container: containerRef.current,
         style: getMapStyle(),
         center: [VENEZUELA_CENTER.lng, VENEZUELA_CENTER.lat],
-        zoom: DEFAULT_ZOOM,
+        zoom: initialZoom,
         attributionControl: { compact: true },
       });
       map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
