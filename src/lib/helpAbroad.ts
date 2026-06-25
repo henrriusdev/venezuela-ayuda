@@ -148,4 +148,21 @@ export const HELP_ABROAD_CITIES: HelpCity[] = [
       },
     ],
   },
+
+  // México
+  {
+    city: "Ciudad de México",
+    country: "México",
+    places: [
+      {
+        name: "Pasticho Express · Centro de acopio solidario",
+        description:
+          "Insumos médicos: analgésicos y antipiréticos (paracetamol, ibuprofeno), antisépticos, material de curación (gasas, vendas, apósitos, algodón), suero salino, cremas antibióticas, sales de rehidratación, antidiarreicos, guantes, cubrebocas, gel antibacterial y termómetros.",
+        address:
+          "Centro Comercial Parques Polanco (al lado del Walmart), Lago Alberto 320, Granada, Miguel Hidalgo, Ciudad de México.",
+        phone: "+52 55 49 14 5083",
+        needs: ["centro-de-acopio"],
+      },
+    ],
+  },
 ];
