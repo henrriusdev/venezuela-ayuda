@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Header from "@/components/Header";
 import BigButton from "@/components/BigButton";
+import DonateButton from "@/components/DonateButton";
 import MapView from "@/components/MapView";
 import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
@@ -33,21 +34,7 @@ export default async function Home() {
           <div>
         {/* Primary actions */}
         <section className="grid gap-3" aria-label="Acciones principales">
-          <BigButton
-            href="https://donate.stripe.com/eVq14m62u9BRdpm4Xw2sM02"
-            emoji="❤️"
-            label="Donar"
-            sublabel="Apoya la respuesta al terremoto en Venezuela"
-            highlight
-          />
-          <a
-            href="https://vaccfoundation.org/about-us/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="-mt-1 text-center text-sm font-semibold text-[#2563a8]"
-          >
-            Conocer más sobre la fundación ↗
-          </a>
+          <DonateButton />
           <BigButton
             href="/buscar"
             emoji="🔎"
