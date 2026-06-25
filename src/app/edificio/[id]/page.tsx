@@ -6,6 +6,7 @@ import ShareButtons from "@/components/ShareButtons";
 import SourceBadge from "@/components/SourceBadge";
 import ManageControls from "@/components/ManageControls";
 import RiskResult from "@/components/RiskResult";
+import GuideInvitePopup from "@/components/GuideInvitePopup";
 import { getDamagedReport } from "@/lib/data";
 import { fullDate, timeAgo } from "@/lib/format";
 import { siteUrl } from "@/lib/share";
@@ -44,6 +45,7 @@ export default async function Page({
     <>
       <Header />
       <main id="contenido" className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+        {nuevo === "1" && <GuideInvitePopup />}
         <Link
           href="/mapa"
           className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800"

@@ -4,6 +4,7 @@ import BigButton from "@/components/BigButton";
 import MapView from "@/components/MapView";
 import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
+import DigitelMeasure from "@/components/DigitelMeasure";
 import { getStats, getMapMarkers } from "@/lib/data";
 
 export const revalidate = 60;
@@ -18,8 +19,8 @@ export default async function Home() {
       <main id="contenido" className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
         {/* Hero (full width, above the two columns) */}
         <section>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[#14212e] sm:text-4xl">
-            Venezuela Ayuda
+          <h1 className="text-[26px] font-extrabold uppercase leading-tight tracking-tight text-[#14212e] sm:text-[34px]">
+            Ayudemos a las víctimas del terremoto en Venezuela
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[#5b6b7b] sm:text-lg">
             Conectando personas, familias y ayuda durante la emergencia.
@@ -31,6 +32,21 @@ export default async function Home() {
           <div>
         {/* Primary actions */}
         <section className="grid gap-3" aria-label="Acciones principales">
+          <BigButton
+            href="https://donate.stripe.com/eVq14m62u9BRdpm4Xw2sM02"
+            emoji="❤️"
+            label="Donar"
+            sublabel="Apoya la respuesta al terremoto en Venezuela"
+            highlight
+          />
+          <a
+            href="https://vaccfoundation.org/about-us/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="-mt-1 text-center text-sm font-semibold text-[#2563a8]"
+          >
+            Conocer más sobre la fundación ↗
+          </a>
           <BigButton
             href="/buscar"
             emoji="🔎"
@@ -86,9 +102,8 @@ export default async function Home() {
           <Stat emoji="🏚️" value={fmt(stats.damaged)} label="Edificios dañados" color="#7f1d1d" />
         </section>
 
-        <div className="mt-5 grid gap-5">
+        <div className="mt-5">
           <EmergencyPhones />
-          <SupportMeasures />
         </div>
           </div>
 
@@ -108,6 +123,15 @@ export default async function Home() {
             </div>
           </div>
         </div>
+
+        {/* Support measures from operators/companies */}
+        <section className="mt-8" aria-label="Medidas de apoyo">
+          <h2 className="mb-3 text-lg font-bold text-[#14212e]">Medidas de apoyo</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SupportMeasures />
+            <DigitelMeasure />
+          </div>
+        </section>
       </main>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">

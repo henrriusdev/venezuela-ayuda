@@ -26,14 +26,35 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Fallback canvas color while the background image loads. */
+  background-color: var(--background);
 }
 
 body {
-  background: var(--background);
+  /* Transparent so the fixed background image (below) shows through. */
+  background: transparent;
   color: var(--foreground);
   font-family: var(--font-sans);
   /* Prevent horizontal scroll on small screens. */
   overflow-x: hidden;
+}
+
+/* Full-page background image, fixed behind all content. A soft light overlay
+   keeps the white cards and text readable. Uses a fixed pseudo-element (smoother
+   on mobile than background-attachment: fixed). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+      rgba(245, 248, 251, 0.7),
+      rgba(245, 248, 251, 0.78)
+    ),
+    url("/main.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Finger-friendly tap targets everywhere. */
