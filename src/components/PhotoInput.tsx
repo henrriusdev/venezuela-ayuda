@@ -91,7 +91,6 @@ export default function PhotoInput({
             ref={fileRef}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={onPick}
             className="sr-only"
           />
