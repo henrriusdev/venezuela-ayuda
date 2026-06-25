@@ -34,8 +34,8 @@ export default async function Home() {
           <BigButton
             href="/buscar"
             emoji="🔎"
-            label="Busco a alguien"
-            sublabel="Busca a una persona o repórtala como desaparecida"
+            label="Buscar o Reportar persona desaparecida"
+            sublabel="Encuentra a alguien o crea un reporte"
             tileBg="#eef3fa"
           />
           <BigButton
