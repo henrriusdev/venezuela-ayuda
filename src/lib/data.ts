@@ -37,6 +37,13 @@ const RELIEF_CENTERS: Array<{ state: string; address: string; lat: number; lng: 
     lat: 10.1878,
     lng: -68.0009,
   },
+  {
+    state: "Barinas",
+    address:
+      "Av. Marqués del Pumar, diagonal al Hotel Comercio, Casa Azul. Barinas. 8:00am–6:00pm · Contacto 0412 569.33.30",
+    lat: 8.6235,
+    lng: -70.2078,
+  },
 ];
 
 function reliefCenterMarkers(): MapMarker[] {
