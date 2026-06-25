@@ -12,6 +12,7 @@ const KIND_META: Record<MarkerKind, { color: string; label: string; emoji: strin
   missing: { color: "#b5811f", label: "Desaparecidos", emoji: "🔎" },
   helper: { color: "#2563a8", label: "Voluntarios", emoji: "🤝" },
   center: { color: "#0d9488", label: "Centros de acopio", emoji: "📦" },
+  damaged: { color: "#7f1d1d", label: "Edificios dañados", emoji: "🏚️" },
 };
 const ALL_KINDS = Object.keys(KIND_META) as MarkerKind[];
 
@@ -21,7 +22,18 @@ function toGeoJSON(markers: MapMarker[]) {
     features: markers.map((m) => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [m.lng, m.lat] },
-      properties: { id: m.id, kind: m.kind, title: m.title, subtitle: m.subtitle ?? "", href: m.href },
+      properties: {
+        id: m.id,
+        kind: m.kind,
+        title: m.title,
+        subtitle: m.subtitle ?? "",
+        href: m.href,
+        confidence: m.confidence ?? "",
+        source: m.source ?? "",
+        note: m.note ?? "",
+        linkLabel: m.linkLabel ?? "",
+        approx: m.approx ? "1" : "",
+      },
     })),
   };
 }
@@ -131,15 +143,21 @@ export default function MapView({
           const p = f.properties as Record<string, string>;
           const meta = KIND_META[p.kind as MarkerKind] ?? KIND_META.need;
           const coords = (f.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
-          const html = `<div style="max-width:220px;font-family:system-ui">
+          const external = p.href?.startsWith("http");
+          const linkLabel = p.linkLabel || (external ? "Cómo llegar →" : "Ver detalle →");
+          const html = `<div style="max-width:230px;font-family:system-ui">
             <div style="font-weight:700;color:${meta.color}">${meta.emoji} ${escapeHtml(meta.label)}</div>
             <div style="font-weight:600;margin-top:2px">${escapeHtml(p.title)}</div>
             ${p.subtitle ? `<div style="color:#475569;font-size:13px;margin-top:2px">${escapeHtml(p.subtitle)}</div>` : ""}
+            ${p.confidence ? `<div style="font-size:12px;margin-top:6px"><b>Confianza:</b> ${escapeHtml(p.confidence)}</div>` : ""}
+            ${p.source ? `<div style="font-size:12px;margin-top:2px;color:#475569"><b>Fuente:</b> ${escapeHtml(p.source)}</div>` : ""}
+            ${p.note ? `<div style="font-size:11px;margin-top:4px;color:#94a3b8;font-style:italic">${escapeHtml(p.note)}</div>` : ""}
+            ${p.approx ? `<div style="font-size:11px;margin-top:4px;color:#94a3b8">📍 Ubicación aproximada</div>` : ""}
             ${
               p.href
-                ? p.href.startsWith("http")
-                  ? `<a href="${escapeAttr(p.href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">Cómo llegar →</a>`
-                  : `<a href="${escapeAttr(p.href)}" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">Ver detalle →</a>`
+                ? external
+                  ? `<a href="${escapeAttr(p.href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">${escapeHtml(linkLabel)}</a>`
+                  : `<a href="${escapeAttr(p.href)}" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:600">${escapeHtml(linkLabel)}</a>`
                 : ""
             }
           </div>`;

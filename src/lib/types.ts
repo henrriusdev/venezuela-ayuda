@@ -59,7 +59,7 @@ export type LatLng = { lat: number; lng: number };
 
 // Unified shape consumed by the map. Kinds: places that need help, missing
 // people, available helpers, and curated relief/collection centers.
-export type MarkerKind = "need" | "missing" | "helper" | "center";
+export type MarkerKind = "need" | "missing" | "helper" | "center" | "damaged";
 
 export interface MapMarker {
   id: string;
@@ -69,4 +69,10 @@ export interface MapMarker {
   title: string;
   subtitle?: string;
   href: string;
+  // Optional popup extras (used by damaged-building reports / centers).
+  confidence?: string; // e.g. "Alta plausibilidad"
+  source?: string; // e.g. "@ReporteYa + familiares"
+  note?: string; // caution note
+  linkLabel?: string; // overrides the popup link text (e.g. "Ver fuente →")
+  approx?: boolean; // location is approximate (geocoded by area)
 }

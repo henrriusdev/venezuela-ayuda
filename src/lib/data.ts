@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { HELP_CATEGORIES, OFFER_CATEGORIES } from "@/lib/constants";
 import { formatItems } from "@/lib/validation";
+import { getDamagedBuildingMarkers } from "@/lib/damagedBuildings";
 
 // Curated relief / collection centers ("centros de acopio"). Static, always
 // shown on the map. Coordinates are approximate (the authoritative info is the
@@ -130,8 +131,10 @@ export async function getHelpRequest(
 }
 
 export async function getMapMarkers(): Promise<MapMarker[]> {
-  // Curated relief centers are always shown, even if the DB is unavailable.
-  if (!isSupabaseConfigured()) return reliefCenterMarkers();
+  // Curated relief centers + damaged-building reports are always shown, even if
+  // the DB is unavailable. These run in parallel and fail soft.
+  const externalMarkers = [reliefCenterMarkers(), await getDamagedBuildingMarkers()].flat();
+  if (!isSupabaseConfigured()) return externalMarkers;
   const supabase = getServerSupabase();
 
   const [checkins, requests, offers] = await Promise.all([
@@ -160,7 +163,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       .limit(2000),
   ]);
 
-  const markers: MapMarker[] = reliefCenterMarkers();
+  const markers: MapMarker[] = [...externalMarkers];
 
   for (const c of (checkins.data ?? []) as PublicCheckin[]) {
     if (c.status === "NEEDS_HELP") {
