@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/PageShell";
-import CheckinCard from "@/components/CheckinCard";
+import PersonResultCard from "@/components/PersonResultCard";
 import SourcesNote from "@/components/SourcesNote";
-import { searchCheckins, searchHelpRequests } from "@/lib/data";
+import {
+  searchCheckins,
+  searchHelpRequests,
+  searchHospitalRegistry,
+  searchMissingPersonsApi,
+} from "@/lib/data";
+import { mergePeople } from "@/lib/people";
 import { HELP_CATEGORIES, URGENCY_LEVELS } from "@/lib/constants";
 import { timeAgo } from "@/lib/format";
 
@@ -26,13 +32,17 @@ export default async function Page({
   const city = sp.ciudad?.trim() || "";
   const hasQuery = qStr.length >= 2 || city.length >= 2;
 
-  const [people, places] = hasQuery
+  const [checkins, places, registry, desaparecidos] = hasQuery
     ? await Promise.all([
         searchCheckins({ q: qStr, city }),
         searchHelpRequests({ q: qStr, city }),
+        searchHospitalRegistry({ q: qStr, city }),
+        searchMissingPersonsApi({ q: qStr, city }),
       ])
-    : [[], []];
+    : [[], [], [], []];
 
+  // Collapse the same person found across sources into one merged result.
+  const people = mergePeople(checkins, registry, desaparecidos);
   const total = people.length + places.length;
 
   const t = await getTranslations("search");
@@ -128,9 +138,9 @@ export default async function Page({
                       {t("peopleHeading")}{" "}
                       <span className="font-normal text-slate-400">({people.length})</span>
                     </h2>
-                    <div className="grid gap-3">
-                      {people.map((c) => (
-                        <CheckinCard key={c.id} c={c} />
+                    <div className="grid grid-cols-1 gap-3">
+                      {people.map((p) => (
+                        <PersonResultCard key={p.key} p={p} />
                       ))}
                     </div>
                   </section>
@@ -142,7 +152,7 @@ export default async function Page({
                       {t("placesHeading")}{" "}
                       <span className="font-normal text-slate-400">({places.length})</span>
                     </h2>
-                    <div className="grid gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                       {places.map((r) => {
                         const cat = HELP_CATEGORIES[r.category];
                         const urgency = URGENCY_LEVELS[r.urgency];

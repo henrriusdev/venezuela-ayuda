@@ -5,12 +5,15 @@ import type {
   PublicHelpRequest,
   PublicHelpOffer,
   PublicDamagedReport,
+  HospitalRegistryMatch,
+  MissingPersonMatch,
   MapMarker,
   LatLng,
 } from "@/lib/types";
 import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY } from "@/lib/constants";
 import { formatItems } from "@/lib/validation";
 import { getDamagedBuildingMarkers } from "@/lib/damagedBuildings";
+import { parseCsv, norm } from "@/lib/csv";
 
 // Curated relief / collection centers ("centros de acopio"). Static, always
 // shown on the map. Coordinates are approximate (the authoritative info is the
@@ -111,6 +114,144 @@ export async function searchHelpRequests(params: {
   const { data, error } = await query;
   if (error) return [];
   return (data ?? []) as PublicHelpRequest[];
+}
+
+// External hospital / Cruz Roja patient registry, maintained as a public Google
+// Sheet (a consolidated roster of people currently in hospitals). We search it
+// alongside the app's own data so a family can find a relative who only appears
+// in the official roster. The gviz CSV endpoint works without publishing the
+// sheet; on any failure we return [] so the rest of the search page is unaffected.
+const HOSPITAL_REGISTRY_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/1fRQ3zEkIFMV2SYEjQiCuwewKAJDSixRepzBUf3ZFqf4/gviz/tq?tqx=out:csv&gid=963077964";
+
+export async function searchHospitalRegistry(params: {
+  q?: string;
+  city?: string;
+  limit?: number;
+}): Promise<HospitalRegistryMatch[]> {
+  const nameTokens = norm(params.q ?? "")
+    .split(/\s+/)
+    .filter(Boolean);
+  const cityQuery = norm(params.city ?? "");
+  if (nameTokens.length === 0 && cityQuery.length === 0) return [];
+
+  let text: string;
+  try {
+    const res = await fetch(HOSPITAL_REGISTRY_CSV_URL, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: 120 }, // near-realtime, but don't hammer Google
+    });
+    if (!res.ok) return [];
+    text = await res.text();
+  } catch {
+    return [];
+  }
+
+  const rows = parseCsv(text);
+  if (rows.length < 2) return [];
+
+  // Resolve columns by normalized header so reordering the sheet can't break us.
+  const header = rows[0].map(norm);
+  const col = (name: string) => header.findIndex((h) => h === name);
+  const iId = col("id");
+  const iHospital = col("hospital");
+  const iName = col("nombre_completo");
+  const iSearch = col("nombre_busqueda");
+  const iAge = col("edad");
+  const iAddr = col("direccion");
+  const iStatus = col("estado");
+  const iUpdated = col("fecha_actualizacion");
+  const iSource = col("fuente");
+
+  const get = (row: string[], i: number) =>
+    i >= 0 && i < row.length ? row[i].trim() : "";
+
+  const limit = params.limit ?? 40;
+  const out: HospitalRegistryMatch[] = [];
+
+  for (let r = 1; r < rows.length && out.length < limit; r++) {
+    const row = rows[r];
+    const name = get(row, iName);
+    if (!name) continue;
+
+    if (nameTokens.length) {
+      const haystack = get(row, iSearch) || norm(name);
+      if (!nameTokens.every((t) => haystack.includes(t))) continue;
+    }
+    if (cityQuery && !norm(get(row, iAddr)).includes(cityQuery)) continue;
+
+    out.push({
+      id: get(row, iId) || `reg-${r}`,
+      name,
+      hospital: get(row, iHospital),
+      location: get(row, iAddr) || null,
+      age: get(row, iAge) || null,
+      status: get(row, iStatus) || null,
+      source: get(row, iSource) || null,
+      updated: get(row, iUpdated) || null,
+    });
+  }
+
+  return out;
+}
+
+// Live search against the public missing-persons API (desaparecidosterremoto).
+// Its `q` matches both name and location, so one term covers the name-or-city
+// trigger. We keep only the privacy-safe fields (no `contacto`). Any failure —
+// the source 429s under load — returns [] so the rest of the page is unaffected.
+const MISSING_PERSONS_API =
+  "https://desaparecidos-terremoto-api.theempire.tech/api/personas";
+
+export async function searchMissingPersonsApi(params: {
+  q?: string;
+  city?: string;
+  limit?: number;
+}): Promise<MissingPersonMatch[]> {
+  const term = (params.q || params.city || "").trim();
+  if (term.length < 2) return [];
+
+  let data: { items?: unknown[] };
+  try {
+    const url =
+      `${MISSING_PERSONS_API}?q=${encodeURIComponent(term)}` +
+      `&page=1&pageSize=${params.limit ?? 20}`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: 120 }, // per-query cache; don't hammer the source
+    });
+    if (!res.ok) return [];
+    data = await res.json();
+  } catch {
+    return [];
+  }
+
+  const items = Array.isArray(data.items) ? data.items : [];
+  const out: MissingPersonMatch[] = [];
+  for (const raw of items) {
+    const p = raw as Record<string, unknown>;
+    const name = typeof p.nombre === "string" ? p.nombre.trim() : "";
+    if (!name) continue;
+    const str = (v: unknown) =>
+      typeof v === "string" && v.trim() ? v.trim() : null;
+    // Prefer an epoch timestamp (precise → "hace X min"); fall back to day-only fecha.
+    const epoch =
+      typeof p.updatedAt === "number"
+        ? p.updatedAt
+        : typeof p.createdAt === "number"
+          ? p.createdAt
+          : null;
+    out.push({
+      id: str(p.id) ?? `dtv-${out.length}`,
+      name,
+      location: str(p.ubicacion),
+      description: str(p.descripcion),
+      photoUrl: str(p.foto),
+      located: p.estado === "localizado",
+      date: epoch !== null ? new Date(epoch).toISOString() : str(p.fecha),
+      sourceUrl: "https://desaparecidosterremotovenezuela.com",
+    });
+  }
+  return out;
 }
 
 // Missing people who have a photo — for the "recognize by face" gallery.

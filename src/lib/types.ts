@@ -99,6 +99,34 @@ export interface RequestResponse {
   created_at: string;
 }
 
+// A person found in the external hospital / Cruz Roja patient registry sheet.
+// Privacy: we deliberately omit phone, cédula and full address — only enough to
+// recognize/locate the person is exposed, matching the public_* convention above.
+export interface HospitalRegistryMatch {
+  id: string;
+  name: string; // nombre_completo
+  hospital: string; // hospital
+  location: string | null; // direccion (city / zone)
+  age: string | null; // edad
+  status: string | null; // estado
+  source: string | null; // fuente
+  updated: string | null; // fecha_actualizacion
+}
+
+// A person from the external missing-persons API (desaparecidosterremoto).
+// Privacy: we omit `contacto` — matching the app's ingest, which stores it as
+// the private phone_private field. Photos are shown publicly (see CheckinCard).
+export interface MissingPersonMatch {
+  id: string;
+  name: string; // nombre
+  location: string | null; // ubicacion
+  description: string | null; // descripcion
+  photoUrl: string | null; // foto
+  located: boolean; // estado === "localizado"
+  date: string | null; // fecha
+  sourceUrl: string;
+}
+
 export type LatLng = { lat: number; lng: number };
 
 // Unified shape consumed by the map. Kinds: places that need help, missing

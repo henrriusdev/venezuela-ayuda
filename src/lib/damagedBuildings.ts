@@ -1,5 +1,6 @@
 import "server-only";
 import type { MapMarker } from "@/lib/types";
+import { parseCsv, norm } from "@/lib/csv";
 
 // Damaged-building reports sourced from a community-maintained, public Google
 // Sheet (Operación Todos con VZLA / curated X reports). Fetched near-realtime
@@ -14,33 +15,6 @@ import type { MapMarker } from "@/lib/types";
 // is not individually published, so this is the working endpoint.
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3i3R6bCeox2n9hPMrxTPY2cDBXYnnJtXIC74YrQ9q-lc1USCiQ9_4ksVWG1TiuFGXzKLGb6C8jcmR/pub?output=csv";
-
-// Minimal RFC-4180 CSV parser (handles quoted fields, embedded commas/newlines).
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
-      } else field += ch;
-    } else if (ch === '"') inQuotes = true;
-    else if (ch === ",") { row.push(field); field = ""; }
-    else if (ch === "\r") { /* skip */ }
-    else if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-    else field += ch;
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
-
-const DIACRITICS = new RegExp("[\\u0300-\\u036f]", "g");
-function norm(s: string): string {
-  return s.toLowerCase().normalize("NFD").replace(DIACRITICS, "").trim();
-}
 
 // Ordered, most-specific-first. First key contained in the zone wins; otherwise
 // we fall back to the city centroid.
