@@ -12,19 +12,30 @@
 import { readFileSync } from "node:fs";
 
 const DRY = process.argv.includes("--dry");
+const DEDUP = process.argv.includes("--dedup"); // run the fuzzy dedup cleanup pass
 
-// --- env ---------------------------------------------------------------------
-const env = Object.fromEntries(
-  readFileSync(new URL("../.env.local", import.meta.url), "utf8")
-    .split("\n")
-    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-    .map((l) => {
-      const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-    })
-);
-const SUPA_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-const SECRET = env.SUPABASE_SECRET_KEY;
+// --- env (process.env wins; falls back to .env.local for local runs) ---------
+let fileEnv = {};
+try {
+  fileEnv = Object.fromEntries(
+    readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+      .split("\n")
+      .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
+      .map((l) => {
+        const i = l.indexOf("=");
+        return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
+      })
+  );
+} catch {
+  /* no .env.local (e.g. CI) — rely on process.env */
+}
+const getEnv = (k) => process.env[k] || fileEnv[k];
+const SUPA_URL = getEnv("NEXT_PUBLIC_SUPABASE_URL");
+const SECRET = getEnv("SUPABASE_SECRET_KEY");
+if (!SUPA_URL || !SECRET) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY");
+  process.exit(1);
+}
 const REST = `${SUPA_URL}/rest/v1`;
 const H = { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "application/json" };
 
@@ -32,6 +43,17 @@ const H = { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "
 const stripAccents = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
 const norm = (s) => stripAccents(s).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 const clean = (s, n = 500) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n) || null;
+
+// Fuzzy name key for aggressive dedup: drop accents + stopwords + short tokens,
+// sort the remaining tokens. So "Pérez, Juan" ≈ "juan perez" ≈ "Juan A. Pérez".
+// Requires >=2 significant tokens (single-name rows keep their exact key to
+// avoid merging different people who share one common name).
+const STOP = new Set(["de","del","la","las","el","los","y","con","un","una","su","a","en","o","e","da","do","san","santa","sr","sra","srta","don","dona","nino","nina","bebe","ano","anos","sus","al","the","and"]);
+function fuzzyKey(name) {
+  const toks = norm(name).split(" ").filter((t) => t.length >= 3 && !STOP.has(t));
+  if (toks.length >= 2) return `mp:${[...new Set(toks)].sort().join(" ")}`;
+  return `mp:${norm(name)}`;
+}
 const VE = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && lat > 0 && lat < 16 && lng > -74 && lng < -59;
 
 // Venezuela city/zone centroids (coast + Caracas + major cities). Used to place
@@ -134,7 +156,7 @@ async function srcTeBusca() {
     const g = geocode(p.ultima_ubicacion, `vtb:${p.id}`);
     return {
       table: "checkins",
-      dedupKey: `mp:${norm(name)}`,
+      dedupKey: fuzzyKey(name),
       row: {
         name,
         status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
@@ -171,7 +193,7 @@ async function srcDesaparecidos() {
     const g = geocode(p.ubicacion, `dtv:${p.id}`);
     return {
       table: "checkins",
-      dedupKey: `mp:${norm(name)}`,
+      dedupKey: fuzzyKey(name),
       row: {
         name,
         status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
@@ -199,7 +221,7 @@ async function srcAppEmergencia() {
     const g = geocode(m.lastSeen, `app:m:${m.id}`);
     recs.push({
       table: "checkins",
-      dedupKey: `mp:${norm(name)}`,
+      dedupKey: fuzzyKey(name),
       row: {
         name,
         status: m.status === "found" ? "SAFE" : "LOOKING_FOR_SOMEONE",
@@ -228,7 +250,7 @@ async function srcAppEmergencia() {
       const name = clean((r.needs || "").split(/[.,]/)[0], 80) || clean(r.place, 80) || "Sin nombre";
       recs.push({
         table: "checkins",
-        dedupKey: `mp:${norm(name)}`,
+        dedupKey: fuzzyKey(name),
         row: {
           name, status: "LOOKING_FOR_SOMEONE",
           city: clean(r.place, 80), latitude: coords?.lat ?? null, longitude: coords?.lng ?? null,
@@ -276,7 +298,7 @@ async function src2026() {
     const name = clean(q.person_name, 80) || "Sin nombre";
     recs.push({
       table: "checkins",
-      dedupKey: `mp:${norm(name)}`,
+      dedupKey: fuzzyKey(name),
       row: {
         name, status: "LOOKING_FOR_SOMEONE", city: clean(q.last_seen_area, 80),
         latitude: VE(q.lat, q.lng) ? q.lat : null, longitude: VE(q.lat, q.lng) ? q.lng : null,
@@ -419,4 +441,56 @@ async function main() {
   console.log("\nDone.");
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// --- fuzzy dedup cleanup over existing data ----------------------------------
+// Scans external missing-person rows, groups by fuzzy name key, keeps the
+// richest record (photo > longer message > earliest), deletes the rest.
+async function dedupExisting() {
+  console.log(`Fuzzy dedup ${DRY ? "(DRY RUN)" : ""} → ${SUPA_URL}\n`);
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await fetch(
+      `${REST}/checkins?select=id,name,photo_url,message,created_at,found_at&source=not.is.null`,
+      { headers: { ...H, Range: `${from}-${from + 999}` } }
+    );
+    if (!r.ok) break;
+    const chunk = await r.json();
+    if (!Array.isArray(chunk) || !chunk.length) break;
+    rows.push(...chunk);
+    if (chunk.length < 1000) break;
+  }
+  console.log(`scanned ${rows.length} external person rows`);
+
+  const groups = new Map();
+  for (const row of rows) {
+    const k = fuzzyKey(row.name || "");
+    (groups.get(k) || groups.set(k, []).get(k)).push(row);
+  }
+
+  const score = (r) => (r.photo_url ? 1000 : 0) + (r.message ? r.message.length : 0);
+  const deleteIds = [];
+  let dupGroups = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    dupGroups++;
+    list.sort((a, b) => score(b) - score(a) || a.created_at.localeCompare(b.created_at));
+    for (const r of list.slice(1)) deleteIds.push(r.id);
+  }
+  console.log(`${dupGroups} duplicate groups → ${deleteIds.length} rows to remove`);
+
+  if (DRY || !deleteIds.length) {
+    console.log(DRY ? "(dry run — nothing deleted)" : "nothing to remove");
+    return;
+  }
+  for (let i = 0; i < deleteIds.length; i += 80) {
+    const ids = deleteIds.slice(i, i + 80);
+    const r = await fetch(`${REST}/checkins?id=in.(${ids.join(",")})`, {
+      method: "DELETE",
+      headers: { ...H, Prefer: "return=minimal" },
+    });
+    if (!r.ok) throw new Error(`delete: ${r.status} ${await r.text()}`);
+    process.stdout.write(`  deleted ${Math.min(i + 80, deleteIds.length)}/${deleteIds.length}\r`);
+  }
+  console.log("\nDone.");
+}
+
+(DEDUP ? dedupExisting() : main()).catch((e) => { console.error(e); process.exit(1); });

@@ -1,0 +1,29 @@
+name: Ingest external sources
+
+# Refreshes data from the sister sites + runs the fuzzy dedup cleanup.
+# Idempotent: only new/changed records are inserted.
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Import new records
+        run: node scripts/ingest.mjs
+      - name: Fuzzy dedup cleanup
+        run: node scripts/ingest.mjs --dedup
