@@ -185,22 +185,7 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <a
-            href="https://coalicionporvenezuela.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/coalicion-por-venezuela.webp"
-              alt="Coalición por Venezuela"
-              className="h-11 w-auto"
-            />
-          </a>
-          <p>{t("footer.tagline")}</p>
-        </div>
+        <p className="mt-4">{t("footer.tagline")}</p>
       </footer>
     </>
   );
