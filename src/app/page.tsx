@@ -110,29 +110,31 @@ export default async function Home() {
         </div>
       </main>
 
-      <footer className="mx-auto w-full max-w-2xl px-4 py-8 text-center text-sm text-[#8190a0]">
-        <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
-          <p className="font-semibold text-[#14212e]">Sin cuenta. Gratis. Rápido.</p>
-          <p className="mt-1">
-            No necesitas registrarte. Tu teléfono nunca se muestra públicamente.
-            Funciona en conexiones lentas y teléfonos sencillos.
-          </p>
-        </div>
+      <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">
+        <div className="grid gap-4 text-left md:grid-cols-2">
+          <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
+            <p className="font-semibold text-[#14212e]">Sin cuenta. Gratis. Rápido.</p>
+            <p className="mt-1">
+              No necesitas registrarte. Tu teléfono nunca se muestra públicamente.
+              Funciona en conexiones lentas y teléfonos sencillos.
+            </p>
+          </div>
 
-        <div className="mt-4 rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
-          <p className="font-semibold text-[#14212e]">Contribuir</p>
-          <p className="mt-1">
-            Este es un proyecto comunitario y sin fines de lucro. Si quieres
-            colaborar —desarrollo, datos, difusión o verificación de información—
-            escríbenos a{" "}
-            <a href="mailto:hola@maw.dev" className="font-semibold text-[#2563a8] underline">
-              hola@maw.dev
-            </a>
-            .
-          </p>
-          <p className="mt-3 font-medium text-[#14212e]">
-            Hecho con cariño para Venezuela. 🇻🇪
-          </p>
+          <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
+            <p className="font-semibold text-[#14212e]">Contribuir</p>
+            <p className="mt-1">
+              Este es un proyecto comunitario y sin fines de lucro. Si quieres
+              colaborar —desarrollo, datos, difusión o verificación de información—
+              escríbeme a{" "}
+              <a href="mailto:hola@maw.dev" className="font-semibold text-[#2563a8] underline">
+                hola@maw.dev
+              </a>
+              .
+            </p>
+            <p className="mt-3 font-medium text-[#14212e]">
+              Hecho con cariño para Venezuela. 🇻🇪
+            </p>
+          </div>
         </div>
 
         <p className="mt-4">Venezuela Ayuda · Plataforma comunitaria de emergencia</p>
