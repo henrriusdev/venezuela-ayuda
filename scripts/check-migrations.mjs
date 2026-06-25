@@ -39,6 +39,14 @@ const versions = readdirSync(dir)
   .map((f) => ({ file: f, version: f.match(/^(\d+)/)?.[1] }))
   .filter((m) => m.version);
 
+// Guard: duplicate version numbers would silently mask an unapplied migration.
+const seen = new Set();
+const dupes = [...new Set(versions.filter((m) => (seen.has(m.version) ? true : (seen.add(m.version), false))).map((m) => m.version))];
+if (dupes.length) {
+  console.error(`❌ Duplicate migration version(s): ${dupes.join(", ")} — renumber so each is unique.`);
+  process.exit(1);
+}
+
 const res = await fetch(`${URL_}/rest/v1/applied_migrations?select=version`, {
   headers: { apikey: SECRET, Authorization: `Bearer ${SECRET}` },
 });

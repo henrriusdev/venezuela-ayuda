@@ -12,6 +12,14 @@ if [ -z "${SUPABASE_DB_URL:-}" ]; then
 fi
 
 DIR="$(cd "$(dirname "$0")/../supabase/migrations" && pwd)"
+
+# Guard: duplicate migration numbers would silently skip one (same version key).
+dupes="$(for f in "$DIR"/*.sql; do basename "$f" | grep -oE '^[0-9]+'; done | sort | uniq -d)"
+if [ -n "$dupes" ]; then
+  echo "❌ Duplicate migration version(s): $(echo "$dupes" | tr '\n' ' ')— renumber so each is unique." >&2
+  exit 1
+fi
+
 PSQL=(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X -q)
 
 # Ensure the tracking table exists (so the first apply can record itself).

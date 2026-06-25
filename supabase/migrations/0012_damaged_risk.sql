@@ -19,3 +19,5 @@ create or replace view public_damaged_reports as
   from damaged_reports where hidden = false;
 
 grant select on public_damaged_reports to anon, authenticated;
+
+insert into applied_migrations (version) values ('0012') on conflict do nothing;
