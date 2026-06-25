@@ -18,8 +18,8 @@ export default async function Home() {
       <main id="contenido" className="mx-auto w-full max-w-6xl flex-1 px-4 py-7">
         {/* Hero (full width, above the two columns) */}
         <section>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[#14212e] sm:text-4xl">
-            Venezuela Ayuda
+          <h1 className="text-[26px] font-extrabold uppercase leading-tight tracking-tight text-[#14212e] sm:text-[34px]">
+            Ayudemos a las víctimas del terremoto en Venezuela
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[#5b6b7b] sm:text-lg">
             Conectando personas, familias y ayuda durante la emergencia.
