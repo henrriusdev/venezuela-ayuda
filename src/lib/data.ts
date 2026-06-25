@@ -288,7 +288,7 @@ export async function getStats(): Promise<Stats> {
   if (!isSupabaseConfigured()) return ZERO_STATS;
   const supabase = getServerSupabase();
   const count = () => ({ count: "exact" as const, head: true });
-  const [safe, missing, found, requests, helpers, damaged] = await Promise.all([
+  const [safe, missing, found, requests, helpers, damaged, sheet] = await Promise.all([
     supabase.from("public_checkins").select("id", count()).eq("status", "SAFE"),
     supabase
       .from("public_checkins")
@@ -303,6 +303,8 @@ export async function getStats(): Promise<Stats> {
     supabase.from("public_help_requests").select("id", count()).neq("status", "RESOLVED"),
     supabase.from("public_help_offers").select("id", count()).eq("available", true),
     supabase.from("public_damaged_reports").select("id", count()).neq("status", "RESOLVED"),
+    // Curated spreadsheet damaged buildings (cached fetch — deduped with the map).
+    getDamagedBuildingMarkers(),
   ]);
   return {
     safe: safe.count ?? 0,
@@ -310,7 +312,7 @@ export async function getStats(): Promise<Stats> {
     found: found.count ?? 0,
     requests: requests.count ?? 0,
     helpers: helpers.count ?? 0,
-    damaged: damaged.count ?? 0,
+    damaged: (damaged.count ?? 0) + sheet.length,
   };
 }
 
