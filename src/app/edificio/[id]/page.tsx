@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import ShareButtons from "@/components/ShareButtons";
+import SourceBadge from "@/components/SourceBadge";
 import ManageControls from "@/components/ManageControls";
 import { getDamagedReport } from "@/lib/data";
 import { fullDate, timeAgo } from "@/lib/format";
@@ -103,6 +104,12 @@ export default async function Page({
           <p className="mt-4 text-sm text-slate-500">
             ⚠️ Reporte de la comunidad, sin verificación oficial.
           </p>
+
+          {r.source && (
+            <p className="mt-2">
+              <SourceBadge source={r.source} url={r.source_url} />
+            </p>
+          )}
 
           <div className="mt-6 border-t border-slate-100 pt-5">
             <p className="mb-2 font-semibold text-slate-800">Comparte este reporte</p>

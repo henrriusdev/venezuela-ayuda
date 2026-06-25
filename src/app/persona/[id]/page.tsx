@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import StatusBadge from "@/components/StatusBadge";
+import SourceBadge from "@/components/SourceBadge";
 import ShareButtons from "@/components/ShareButtons";
 import ManageControls from "@/components/ManageControls";
 import { getCheckin } from "@/lib/data";
@@ -102,6 +103,12 @@ export default async function Page({
           <p className="mt-4 text-sm text-slate-400" title={fullDate(c.created_at)}>
             Actualizado {timeAgo(c.created_at)}
           </p>
+
+          {c.source && (
+            <p className="mt-2">
+              <SourceBadge source={c.source} url={c.source_url} />
+            </p>
+          )}
 
           <div className="mt-6 border-t border-slate-100 pt-5">
             <p className="mb-2 font-semibold text-slate-800">Comparte este reporte</p>

@@ -22,6 +22,8 @@ export interface PublicCheckin {
   created_at: string;
   found_at: string | null;
   place_name: string | null;
+  source: string | null;
+  source_url: string | null;
 }
 
 // A needed tool/equipment with an estimated quantity.
@@ -42,6 +44,8 @@ export interface PublicHelpRequest {
   created_at: string;
   place_name: string | null;
   items: NeededItem[] | null;
+  source: string | null;
+  source_url: string | null;
 }
 
 export interface PublicHelpOffer {
@@ -70,6 +74,8 @@ export interface PublicDamagedReport {
   created_at: string;
   verified_at: string | null;
   verified_by: string | null;
+  source: string | null;
+  source_url: string | null;
 }
 
 export type LatLng = { lat: number; lng: number };

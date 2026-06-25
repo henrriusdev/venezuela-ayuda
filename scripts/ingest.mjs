@@ -1,0 +1,403 @@
+// External-source ingestion for Venezuela Ayuda.
+//
+//   node scripts/ingest.mjs            # import (idempotent)
+//   node scripts/ingest.mjs --dry      # fetch + transform + dedup, no writes
+//
+// Pulls from sister sites (all public APIs), maps to our checkins /
+// damaged_reports / help_requests, geocodes location-less missing-person
+// registries to a city/zone centroid, dedups hard (cross-source + cross-run),
+// keeps external contacts in PRIVATE fields, and stamps source + source_url.
+// Requires migration 0007 applied. Reads keys from .env.local.
+
+import { readFileSync } from "node:fs";
+
+const DRY = process.argv.includes("--dry");
+
+// --- env ---------------------------------------------------------------------
+const env = Object.fromEntries(
+  readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+    .split("\n")
+    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
+    .map((l) => {
+      const i = l.indexOf("=");
+      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
+    })
+);
+const SUPA_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+const SECRET = env.SUPABASE_SECRET_KEY;
+const REST = `${SUPA_URL}/rest/v1`;
+const H = { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "application/json" };
+
+// --- helpers -----------------------------------------------------------------
+const stripAccents = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+const norm = (s) => stripAccents(s).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+const clean = (s, n = 500) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n) || null;
+const VE = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng) && lat > 0 && lat < 16 && lng > -74 && lng < -59;
+
+// Venezuela city/zone centroids (coast + Caracas + major cities). Used to place
+// missing-person reports that only have free-text locations.
+const PLACES = [
+  ["los palos grandes", 10.503, -66.844], ["altamira", 10.4965, -66.849],
+  ["los dos caminos", 10.509, -66.829], ["el paraiso", 10.479, -66.929],
+  ["pinto salinas", 10.5, -66.895], ["san bernardino", 10.506, -66.894],
+  ["bello monte", 10.492, -66.858], ["sabana grande", 10.493, -66.866],
+  ["chacao", 10.497, -66.854], ["petare", 10.477, -66.81], ["catia", 10.512, -66.93],
+  ["el valle", 10.45, -66.905], ["antimano", 10.46, -66.95], ["baruta", 10.433, -66.875],
+  ["el hatillo", 10.42, -66.82], ["la candelaria", 10.503, -66.902],
+  ["santa monica", 10.46, -66.88], ["montalban", 10.47, -66.95],
+  ["los corales", 10.6, -66.86], ["caraballeda", 10.613, -66.852],
+  ["macuto", 10.6085, -66.8915], ["punta brisas", 10.6075, -66.886],
+  ["catia la mar", 10.595, -67.02], ["maiquetia", 10.6, -66.98],
+  ["la guaira", 10.601, -66.933], ["naiguata", 10.61, -66.74], ["tanaguarena", 10.615, -66.83],
+  ["carayaca", 10.55, -67.1], ["caribe", 10.612, -66.855], ["playa grande", 10.61, -66.9],
+  ["vargas", 10.6, -66.93], ["caracas", 10.488, -66.879], ["los teques", 10.34, -67.04],
+  ["guarenas", 10.47, -66.61], ["guatire", 10.47, -66.54],
+  ["maracay", 10.2469, -67.5958], ["valencia", 10.162, -68.008],
+  ["barquisimeto", 10.0647, -69.3471], ["maracaibo", 10.654, -71.64],
+  ["barcelona", 10.13, -64.69], ["puerto la cruz", 10.21, -64.62], ["cumana", 10.45, -64.18],
+  ["merida", 8.59, -71.14], ["san cristobal", 7.77, -72.22], ["maturin", 9.75, -63.18],
+  ["puerto ordaz", 8.3, -62.72], ["ciudad guayana", 8.35, -62.65], ["coro", 11.4, -69.68],
+  ["punto fijo", 11.69, -70.2], ["tucacas", 10.799, -68.316], ["yumare", 10.62, -68.69],
+  ["moron", 10.48, -68.19],
+];
+function geocode(text, seed) {
+  const t = norm(text);
+  if (!t) return null;
+  let base = null;
+  for (const [k, la, ln] of PLACES) if (t.includes(k)) { base = [la, ln]; break; }
+  if (!base) return null;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  const j = (x) => ((x % 1000) / 1000 - 0.5) * 0.01;
+  return { lat: +(base[0] + j(h)).toFixed(6), lng: +(base[1] + j(h >> 10)).toFixed(6) };
+}
+
+async function fetchJson(url, headers = {}) {
+  const r = await fetch(url, { headers });
+  if (!r.ok) throw new Error(`${r.status} ${url}`);
+  return r.json();
+}
+
+// --- source adapters ---------------------------------------------------------
+// Each returns { table, row, dedupKey }. row already shaped for our schema.
+
+const SEV = { total: "COLLAPSED", severo: "COLLAPSE_RISK", parcial: "CRACKS" };
+
+async function srcTvComBuildings() {
+  const key = "sb_publishable_i7iEDrCVZcSt0k3RGFrY4g_WrtZBB4w";
+  const data = await fetchJson(
+    "https://jckifxsdlnsvbztxydes.supabase.co/rest/v1/buildings?select=*",
+    { apikey: key, Authorization: `Bearer ${key}` }
+  );
+  return data.map((b) => ({
+    table: "damaged_reports",
+    dedupKey: `${norm(b.name)}|${norm(b.city)}`,
+    row: {
+      place_name: clean(b.name, 120) || "Edificio",
+      description: clean([b.notes, b.address, b.zone].filter(Boolean).join(" · "), 800),
+      severity: SEV[b.damage_level] || "PARTIAL",
+      city: clean(b.city, 80),
+      latitude: VE(b.lat, b.lng) ? b.lat : null,
+      longitude: VE(b.lat, b.lng) ? b.lng : null,
+      photo_url: clean(b.main_photo_url, 500),
+      source: "terremotovenezuela.com",
+      source_url: "https://terremotovenezuela.com",
+      external_id: `tvcom:${b.id}`,
+    },
+  }));
+}
+
+async function pagedRange(base, key, pageSize = 1000) {
+  const out = [];
+  for (let from = 0; ; from += pageSize) {
+    const r = await fetch(`${base}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Range: `${from}-${from + pageSize - 1}` },
+    });
+    const chunk = await r.json();
+    if (!Array.isArray(chunk) || !chunk.length) break;
+    out.push(...chunk);
+    if (chunk.length < pageSize) break;
+  }
+  return out;
+}
+
+async function srcTeBusca() {
+  const key =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY25idmt3a2l5eGxraHV3YXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzNDQxNzcsImV4cCI6MjA5NzkyMDE3N30.-0hKS1VFaMFFpnCTzrl4Wj7XwfUVAfos6a0QTGzDtEY";
+  const data = await pagedRange(
+    "https://ihcnbvkwkiyxlkhuwapu.supabase.co/rest/v1/desaparecidos?select=*&order=created_at.desc",
+    key
+  );
+  return data.map((p) => {
+    const name = clean([p.nombre, p.apellido].filter(Boolean).join(" "), 80) || "Sin nombre";
+    const found = p.estado === "encontrado";
+    const g = geocode(p.ultima_ubicacion, `vtb:${p.id}`);
+    return {
+      table: "checkins",
+      dedupKey: `mp:${norm(name)}`,
+      row: {
+        name,
+        status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        city: clean(p.ultima_ubicacion, 80),
+        latitude: g?.lat ?? null,
+        longitude: g?.lng ?? null,
+        message: clean(p.descripcion, 500),
+        phone_private: clean(p.reportado_por_telefono, 30),
+        photo_url: clean(p.foto_url, 500),
+        place_name: clean(p.ultima_ubicacion, 120),
+        found_at: found ? p.fecha_encontrado || new Date().toISOString() : null,
+        source: "venezuelatebusca.com",
+        source_url: "https://venezuelatebusca.com",
+        external_id: `vtb:${p.id}`,
+      },
+    };
+  });
+}
+
+async function srcDesaparecidos() {
+  const out = [];
+  for (let page = 1; ; page++) {
+    const d = await fetchJson(
+      `https://desaparecidos-terremoto-api.theempire.tech/api/personas?page=${page}&pageSize=200`
+    );
+    const items = d.items || [];
+    if (!items.length) break;
+    out.push(...items);
+    if (page >= (d.totalPages || 1)) break;
+  }
+  return out.map((p) => {
+    const name = clean(p.nombre, 80) || "Sin nombre";
+    const found = p.estado === "localizado";
+    const g = geocode(p.ubicacion, `dtv:${p.id}`);
+    return {
+      table: "checkins",
+      dedupKey: `mp:${norm(name)}`,
+      row: {
+        name,
+        status: found ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        city: clean(p.ubicacion, 80),
+        latitude: g?.lat ?? null,
+        longitude: g?.lng ?? null,
+        message: clean([p.descripcion, p.localizadoNota].filter(Boolean).join(" · "), 500),
+        phone_private: clean(p.contacto, 30),
+        photo_url: clean(p.foto, 500),
+        place_name: clean(p.ubicacion, 120),
+        found_at: found ? new Date(p.updatedAt || Date.now()).toISOString() : null,
+        source: "desaparecidosterremotovenezuela.com",
+        source_url: "https://desaparecidosterremotovenezuela.com",
+        external_id: `dtv:${p.id}`,
+      },
+    };
+  });
+}
+
+async function srcAppEmergencia() {
+  const recs = [];
+  const missing = (await fetchJson("https://terremotovenezuela.app/api/missing?status=all")).people || [];
+  for (const m of missing) {
+    const name = clean(m.name, 80) || "Sin nombre";
+    const g = geocode(m.lastSeen, `app:m:${m.id}`);
+    recs.push({
+      table: "checkins",
+      dedupKey: `mp:${norm(name)}`,
+      row: {
+        name,
+        status: m.status === "found" ? "SAFE" : "LOOKING_FOR_SOMEONE",
+        city: clean(m.lastSeen, 80),
+        latitude: g?.lat ?? null,
+        longitude: g?.lng ?? null,
+        message: clean([m.description, m.lastSeen, m.resolutionNote].filter(Boolean).join(" · "), 500),
+        phone_private: clean(m.contact, 30),
+        photo_url: m.photoUrl ? `https://terremotovenezuela.app${m.photoUrl}` : null,
+        place_name: clean(m.lastSeen, 120),
+        found_at: m.status === "found" ? m.resolvedAt || new Date().toISOString() : null,
+        source: "terremotovenezuela.app",
+        source_url: "https://terremotovenezuela.app",
+        external_id: `app:m:${m.id}`,
+      },
+    });
+  }
+  const reports = (await fetchJson("https://terremotovenezuela.app/api/reports")).reports || [];
+  for (const r of reports) {
+    const coords = VE(r.lat, r.lng) ? { lat: r.lat, lng: r.lng } : null;
+    const photo = r.photoUrl ? `https://terremotovenezuela.app${r.photoUrl}` : null;
+    if (r.type === "missing") {
+      const name = clean((r.needs || "").split(/[.,]/)[0], 80) || clean(r.place, 80) || "Sin nombre";
+      recs.push({
+        table: "checkins",
+        dedupKey: `mp:${norm(name)}`,
+        row: {
+          name, status: "LOOKING_FOR_SOMEONE",
+          city: clean(r.place, 80), latitude: coords?.lat ?? null, longitude: coords?.lng ?? null,
+          message: clean(r.needs, 500), place_name: clean(r.place, 120), photo_url: photo,
+          source: "terremotovenezuela.app", source_url: "https://terremotovenezuela.app",
+          external_id: `app:r:${r.id}`,
+        },
+      });
+    } else if (r.type === "building") {
+      recs.push({
+        table: "damaged_reports",
+        dedupKey: `${norm(r.place)}|${norm(r.place)}`,
+        row: {
+          place_name: clean(r.place, 120) || "Edificio", description: clean(r.needs, 800),
+          severity: "PARTIAL", city: clean(r.place, 80),
+          latitude: coords?.lat ?? null, longitude: coords?.lng ?? null, photo_url: photo,
+          source: "terremotovenezuela.app", source_url: "https://terremotovenezuela.app",
+          external_id: `app:r:${r.id}`,
+        },
+      });
+    } else if (r.type === "critical" || r.type === "supplies" || r.type === "nopower") {
+      const cat = r.type === "critical" ? "rescue" : r.type === "nopower" ? "electricity" : "food";
+      if (!coords) continue; // help requests need a location
+      recs.push({
+        table: "help_requests",
+        dedupKey: null,
+        row: {
+          category: cat, description: clean(r.needs, 800) || "Sin descripción",
+          urgency: r.type === "critical" ? "CRITICAL" : "MEDIUM",
+          city: clean(r.place, 80), latitude: coords.lat, longitude: coords.lng,
+          place_name: clean(r.place, 120),
+          source: "terremotovenezuela.app", source_url: "https://terremotovenezuela.app",
+          external_id: `app:r:${r.id}`,
+        },
+      });
+    }
+  }
+  return recs;
+}
+
+async function src2026() {
+  const recs = [];
+  const reqs = (await fetchJson("https://terremotovenezuela2026.vercel.app/api/requests")).data || [];
+  for (const q of reqs) {
+    const name = clean(q.person_name, 80) || "Sin nombre";
+    recs.push({
+      table: "checkins",
+      dedupKey: `mp:${norm(name)}`,
+      row: {
+        name, status: "LOOKING_FOR_SOMEONE", city: clean(q.last_seen_area, 80),
+        latitude: VE(q.lat, q.lng) ? q.lat : null, longitude: VE(q.lat, q.lng) ? q.lng : null,
+        message: clean(q.description, 500), phone_private: clean(q.contact_info, 30),
+        place_name: clean(q.last_seen_area, 120),
+        source: "terremotovenezuela2026", source_url: "https://terremotovenezuela2026.vercel.app",
+        external_id: `tv26:${q.id}`,
+      },
+    });
+  }
+  const vids = (await fetchJson("https://terremotovenezuela2026.vercel.app/api/videos")).data || [];
+  for (const v of vids) {
+    if (!["damage", "infrastructure", "evacuation"].includes(v.situation_type)) continue;
+    recs.push({
+      table: "damaged_reports",
+      dedupKey: `${norm(v.area_name)}|${norm(v.title)}`,
+      row: {
+        place_name: clean(v.area_name, 120) || "Zona afectada",
+        description: clean([v.title, v.description].filter(Boolean).join(" · "), 800),
+        severity: "PARTIAL", city: clean(v.area_name, 80),
+        latitude: VE(v.lat, v.lng) ? v.lat : null, longitude: VE(v.lat, v.lng) ? v.lng : null,
+        source: "terremotovenezuela2026",
+        source_url: clean(v.video_url || v.source_url, 500) || "https://terremotovenezuela2026.vercel.app",
+        external_id: `tv26v:${v.id}`,
+      },
+    });
+  }
+  return recs;
+}
+
+// Order matters for dedup: richest/photo-bearing sources first so the kept copy
+// is the most complete.
+const SOURCES = [
+  ["terremotovenezuela.com (edificios)", srcTvComBuildings],
+  ["venezuelatebusca.com (desaparecidos)", srcTeBusca],
+  ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
+  ["terremotovenezuela.app", srcAppEmergencia],
+  ["terremotovenezuela2026", src2026],
+];
+
+// --- existing keys (idempotency) --------------------------------------------
+async function existingSet(table, col) {
+  const set = new Set();
+  for (let from = 0; ; from += 1000) {
+    const r = await fetch(`${REST}/${table}?select=${col}&${col}=not.is.null`, {
+      headers: { ...H, Range: `${from}-${from + 999}` },
+    });
+    if (!r.ok) break; // column not present yet (pre-migration) → treat as empty
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length) break;
+    for (const x of rows) if (x[col]) set.add(x[col]);
+    if (rows.length < 1000) break;
+  }
+  return set;
+}
+
+async function insertBatch(table, rows) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const batch = rows.slice(i, i + 500);
+    const r = await fetch(`${REST}/${table}`, {
+      method: "POST",
+      headers: { ...H, Prefer: "return=minimal" },
+      body: JSON.stringify(batch),
+    });
+    if (!r.ok) throw new Error(`insert ${table}: ${r.status} ${await r.text()}`);
+    process.stdout.write(`  ${table}: +${Math.min(i + 500, rows.length)}/${rows.length}\r`);
+  }
+  process.stdout.write("\n");
+}
+
+// --- run ---------------------------------------------------------------------
+async function main() {
+  console.log(`Ingest ${DRY ? "(DRY RUN)" : ""} → ${SUPA_URL}\n`);
+
+  // Gather all records.
+  let all = [];
+  for (const [name, fn] of SOURCES) {
+    try {
+      const recs = await fn();
+      console.log(`fetched ${recs.length.toString().padStart(5)}  ${name}`);
+      all.push(...recs);
+    } catch (e) {
+      console.log(`FAILED  ${name}: ${e.message}`);
+    }
+  }
+
+  // Dedup: external_id (idempotency) + dedup_key (cross-source).
+  const seenExt = {
+    checkins: await existingSet("checkins", "external_id"),
+    damaged_reports: await existingSet("damaged_reports", "external_id"),
+    help_requests: await existingSet("help_requests", "external_id"),
+  };
+  const seenKey = {
+    checkins: await existingSet("checkins", "dedup_key"),
+    damaged_reports: await existingSet("damaged_reports", "dedup_key"),
+    help_requests: new Set(),
+  };
+
+  const toInsert = { checkins: [], damaged_reports: [], help_requests: [] };
+  let dupExt = 0, dupKey = 0;
+  for (const rec of all) {
+    const ext = rec.row.external_id;
+    if (ext && seenExt[rec.table].has(ext)) { dupExt++; continue; }
+    if (rec.dedupKey) {
+      if (seenKey[rec.table].has(rec.dedupKey)) { dupKey++; continue; }
+      seenKey[rec.table].add(rec.dedupKey);
+    }
+    if (ext) seenExt[rec.table].add(ext);
+    toInsert[rec.table].push({ ...rec.row, dedup_key: rec.dedupKey ?? null });
+  }
+
+  console.log(`\nskipped: ${dupExt} already-imported, ${dupKey} cross-source duplicates`);
+  for (const t of Object.keys(toInsert))
+    console.log(`new ${t}: ${toInsert[t].length}`);
+
+  if (DRY) {
+    console.log("\n(dry run — nothing written)");
+    console.log("sample:", JSON.stringify(toInsert.checkins[0] || toInsert.damaged_reports[0], null, 2));
+    return;
+  }
+
+  for (const t of Object.keys(toInsert))
+    if (toInsert[t].length) await insertBatch(t, toInsert[t]);
+  console.log("\nDone.");
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });

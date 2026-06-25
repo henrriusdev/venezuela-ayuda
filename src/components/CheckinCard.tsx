@@ -1,5 +1,6 @@
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
+import SourceBadge from "@/components/SourceBadge";
 import { timeAgo } from "@/lib/format";
 import { CHECKIN_STATUSES, FOUND_BADGE } from "@/lib/constants";
 import type { PublicCheckin } from "@/lib/types";
@@ -58,6 +59,7 @@ export default function CheckinCard({ c }: { c: PublicCheckin }) {
       {c.message && (
         <p className="mt-3 line-clamp-2 text-sm text-[#5b6b7b]">“{c.message}”</p>
       )}
+      {c.source && <SourceBadge source={c.source} url={c.source_url} className="mt-2" />}
     </Link>
   );
 }

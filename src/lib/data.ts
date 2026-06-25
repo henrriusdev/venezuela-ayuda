@@ -154,7 +154,7 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
   const { data } = await supabase
     .from("public_damaged_reports")
     .select(
-      "id,place_name,description,severity,city,latitude,longitude,photo_url,status,created_at",
+      "id,place_name,description,severity,city,latitude,longitude,photo_url,status,created_at,verified_at,source",
     )
     .not("latitude", "is", null)
     .neq("status", "RESOLVED")
@@ -172,7 +172,9 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
     }`,
     confidence: r.verified_at
       ? "✅ Verificado por un administrador"
-      : "Reporte de la comunidad (sin verificar)",
+      : r.source
+        ? `Fuente: ${r.source} (sin verificar)`
+        : "Reporte de la comunidad (sin verificar)",
     href: `/edificio/${r.id}`,
     color: DAMAGE_SEVERITY[r.severity]?.color, // pin colored by severity
   }));
@@ -188,7 +190,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
   const [checkins, requests, offers] = await Promise.all([
     supabase
       .from("public_checkins")
-      .select("id,name,status,city,latitude,longitude,message,created_at,found_at")
+      .select("id,name,status,city,latitude,longitude,message,created_at,found_at,source")
       .not("latitude", "is", null)
       .neq("status", "SAFE")
       .order("created_at", { ascending: false })
@@ -196,7 +198,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
     supabase
       .from("public_help_requests")
       .select(
-        "id,category,description,urgency,city,latitude,longitude,status,created_at,place_name,items",
+        "id,category,description,urgency,city,latitude,longitude,status,created_at,place_name,items,source",
       )
       .not("latitude", "is", null)
       .neq("status", "RESOLVED")
@@ -223,6 +225,8 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
         title: c.name,
         subtitle: c.city ?? c.message ?? undefined,
         href: `/persona/${c.id}`,
+        source: c.source ?? undefined,
+        approx: c.source ? true : undefined,
       });
     } else if (c.status === "LOOKING_FOR_SOMEONE") {
       if (c.found_at) continue;
@@ -234,6 +238,8 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
         title: c.name,
         subtitle: c.city ? `Última ubicación: ${c.city}` : c.message ?? undefined,
         href: `/persona/${c.id}`,
+        source: c.source ?? undefined,
+        approx: c.source ? true : undefined,
       });
     }
   }
@@ -251,6 +257,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       title: r.place_name || (HELP_CATEGORIES[r.category]?.label ?? r.category),
       subtitle: subtitle || undefined,
       href: `/solicitud/${r.id}`,
+      source: r.source ?? undefined,
     });
   }
 
