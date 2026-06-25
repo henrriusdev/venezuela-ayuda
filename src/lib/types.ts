@@ -68,6 +68,8 @@ export interface PublicDamagedReport {
   photo_url: string | null;
   status: RequestStatus;
   created_at: string;
+  verified_at: string | null;
+  verified_by: string | null;
 }
 
 export type LatLng = { lat: number; lng: number };

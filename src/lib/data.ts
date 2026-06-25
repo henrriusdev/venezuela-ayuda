@@ -170,7 +170,9 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
     subtitle: `${DAMAGE_SEVERITY[r.severity]?.label ?? r.severity}${
       r.description ? ` — ${r.description.slice(0, 100)}` : ""
     }`,
-    confidence: "Reporte de la comunidad (sin verificar)",
+    confidence: r.verified_at
+      ? "✅ Verificado por un administrador"
+      : "Reporte de la comunidad (sin verificar)",
     href: `/edificio/${r.id}`,
     color: DAMAGE_SEVERITY[r.severity]?.color, // pin colored by severity
   }));
