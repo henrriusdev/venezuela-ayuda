@@ -38,6 +38,14 @@ export default async function Home() {
             sublabel="Apoya la respuesta al terremoto en Venezuela"
             highlight
           />
+          <a
+            href="https://vaccfoundation.org/about-us/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="-mt-1 text-center text-sm font-semibold text-[#2563a8]"
+          >
+            Conocer más sobre la fundación ↗
+          </a>
           <BigButton
             href="/buscar"
             emoji="🔎"
