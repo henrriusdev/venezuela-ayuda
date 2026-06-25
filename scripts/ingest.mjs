@@ -10,7 +10,7 @@
 // Requires migration 0007 applied. Reads keys from .env.local.
 
 import { readFileSync } from "node:fs";
-import { norm, fuzzyKey, clusterNames } from "./dedup-lib.mjs";
+import { norm, fuzzyKey, personKey, geoCell, clusterNames } from "./dedup-lib.mjs";
 
 const DRY = process.argv.includes("--dry");
 const DEDUP = process.argv.includes("--dedup"); // run the fuzzy dedup cleanup pass
@@ -177,7 +177,7 @@ async function srcTeBusca() {
     const g = geocode(p.ultima_ubicacion, `vtb:${p.id}`);
     return {
       table: "checkins",
-      dedupKey: fuzzyKey(name),
+      dedupKey: personKey(name, g?.lat, g?.lng),
       row: {
         name,
         status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
@@ -228,7 +228,7 @@ async function srcDesaparecidos() {
     const g = geocode(p.ubicacion, `dtv:${p.id}`);
     return {
       table: "checkins",
-      dedupKey: fuzzyKey(name),
+      dedupKey: personKey(name, g?.lat, g?.lng),
       row: {
         name,
         status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
@@ -256,7 +256,7 @@ async function srcAppEmergencia() {
     const g = geocode(m.lastSeen, `app:m:${m.id}`);
     recs.push({
       table: "checkins",
-      dedupKey: fuzzyKey(name),
+      dedupKey: personKey(name, g?.lat, g?.lng),
       row: {
         name,
         status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
@@ -285,7 +285,7 @@ async function srcAppEmergencia() {
       const name = clean((r.needs || "").split(/[.,]/)[0], 80) || clean(r.place, 80) || "Sin nombre";
       recs.push({
         table: "checkins",
-        dedupKey: fuzzyKey(name),
+        dedupKey: personKey(name, coords?.lat, coords?.lng),
         row: {
           name, status: "LOOKING_FOR_SOMEONE",
           city: clean(r.place, 80), latitude: coords?.lat ?? null, longitude: coords?.lng ?? null,
@@ -475,14 +475,14 @@ async function dedupExisting() {
   };
   await dedupTable({
     table: "checkins",
-    select: "id,name,photo_url,message,created_at,found_at,source",
+    select: "id,name,photo_url,message,created_at,found_at,source,latitude,longitude",
     nameOf: (r) => r.name || "",
     score: (r) => (r.photo_url ? 1e5 : 0) + (PERSON_RANK[r.source] ?? 0) * 1000 + (r.message ? r.message.length : 0),
   });
   // Edificios dañados: foto > descripción más larga. (Antes no se dedup-eaban.)
   await dedupTable({
     table: "damaged_reports",
-    select: "id,place_name,photo_url,description,created_at,source",
+    select: "id,place_name,photo_url,description,created_at,source,latitude,longitude",
     nameOf: (r) => r.place_name || "",
     score: (r) => (r.photo_url ? 1e5 : 0) + (r.description ? r.description.length : 0),
   });
@@ -510,9 +510,22 @@ async function dedupTable({ table, select, nameOf, score }) {
   let dupGroups = 0;
   for (const idxs of clusters) {
     if (idxs.length < 2) continue;
-    dupGroups++;
-    const list = idxs.map((i) => rows[i]).sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)));
-    for (const r of list.slice(1)) deleteIds.push(r.id);
+    // Split a name-cluster by region: only merge records in the SAME geo cell.
+    // Homónimos en regiones distintas son personas distintas y se conservan.
+    // Filas sin coords comparten la celda "" (se fusionan entre sí, igual que antes).
+    const byCell = new Map();
+    for (const i of idxs) {
+      const r = rows[i];
+      const cell = geoCell(r.latitude, r.longitude);
+      if (!byCell.has(cell)) byCell.set(cell, []);
+      byCell.get(cell).push(r);
+    }
+    for (const list of byCell.values()) {
+      if (list.length < 2) continue;
+      dupGroups++;
+      list.sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)));
+      for (const r of list.slice(1)) deleteIds.push(r.id);
+    }
   }
   console.log(`[${table}] ${dupGroups} duplicate groups → ${deleteIds.length} rows to remove`);
 

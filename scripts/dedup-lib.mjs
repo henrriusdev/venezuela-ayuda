@@ -21,6 +21,23 @@ export function fuzzyKey(name) {
   return `mp:${norm(name)}`;
 }
 
+// Celda geográfica gruesa (~0.3° ≈ 33 km) usada como DISCRIMINADOR: el mismo
+// nombre en regiones distintas (Caracas vs Maracaibo) son personas distintas y
+// NO deben fusionarse. La ubicación en texto libre de una misma persona varía
+// pero se geocodifica al mismo centroide → misma celda → sí fusiona los repetidos.
+// Sin coords → "" (cae a solo-nombre, comportamiento previo).
+export function geoCell(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+  return `${Math.round(lat / 0.3)},${Math.round(lng / 0.3)}`;
+}
+
+// Clave de persona para el dedup del INGEST: nombre + región. Dos homónimos en
+// regiones distintas conservan claves distintas (no se descarta a nadie real).
+export function personKey(name, lat, lng) {
+  const cell = geoCell(lat, lng);
+  return cell ? `${fuzzyKey(name)}@${cell}` : fuzzyKey(name);
+}
+
 // Separa un nombre en tokens SIGNIFICATIVOS (>=3 chars) y DISCRIMINADORES de
 // unidad (números o letra suelta: "Torre 1" vs "Torre 2", "Edificio A" vs "B").
 // Los discriminadores son la base del veto: si difieren, NUNCA es el mismo lugar.
