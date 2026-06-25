@@ -1,4 +1,5 @@
 import { LIMITS } from "./constants";
+import type { NeededItem } from "./types";
 
 // Lightweight input cleaning. We strip control characters, collapse runaway
 // whitespace, and clamp lengths so a single actor can't bloat the DB or
@@ -57,6 +58,37 @@ export function normalizePhone(raw: string | null): string | null {
 
 export function isValidStatus(v: unknown): boolean {
   return v === "SAFE" || v === "NEEDS_HELP" || v === "LOOKING_FOR_SOMEONE";
+}
+
+// Parse + sanitize the tools list submitted as a JSON string. Defends against
+// malformed input: drops non-objects, cleans names, clamps quantities, caps size.
+export function parseItems(raw: FormDataEntryValue | null): NeededItem[] {
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  let arr: unknown;
+  try {
+    arr = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(arr)) return [];
+  const out: NeededItem[] = [];
+  for (const entry of arr) {
+    if (!entry || typeof entry !== "object") continue;
+    const name = cleanText((entry as Record<string, unknown>).name as string, LIMITS.itemName);
+    if (!name) continue;
+    let qty = Math.floor(Number((entry as Record<string, unknown>).qty));
+    if (!Number.isFinite(qty) || qty < 1) qty = 1;
+    if (qty > LIMITS.maxQty) qty = LIMITS.maxQty;
+    out.push({ name, qty });
+    if (out.length >= LIMITS.maxItems) break;
+  }
+  return out;
+}
+
+// Render a needed-items list compactly, e.g. "Taladro ×2, Casco ×10".
+export function formatItems(items: NeededItem[] | null | undefined): string {
+  if (!items || !items.length) return "";
+  return items.map((i) => `${i.name} ×${i.qty}`).join(", ");
 }
 
 export const FIELD_LIMITS = LIMITS;

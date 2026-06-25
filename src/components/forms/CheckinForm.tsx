@@ -1,16 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitCheckin, type ActionState } from "@/app/actions";
-import { CHECKIN_STATUSES, LIMITS } from "@/lib/constants";
+import { CHECKIN_STATUSES, LIMITS, type CheckinStatus } from "@/lib/constants";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
 import LocationPicker from "@/components/LocationPicker";
 import SubmitButton from "@/components/SubmitButton";
 
 const initial: ActionState = { ok: false };
 
-export default function CheckinForm() {
+export default function CheckinForm({
+  initialStatus,
+}: {
+  initialStatus?: CheckinStatus;
+}) {
   const [state, action] = useActionState(submitCheckin, initial);
+  const [status, setStatus] = useState<CheckinStatus>(initialStatus ?? "SAFE");
+  const isMissing = status === "LOOKING_FOR_SOMEONE";
 
   return (
     <form action={action} className="space-y-5">
@@ -24,7 +30,7 @@ export default function CheckinForm() {
 
       <div>
         <Label htmlFor="name" required>
-          Tu nombre
+          {isMissing ? "Nombre de la persona desaparecida" : "Tu nombre"}
         </Label>
         <TextInput
           id="name"
@@ -33,7 +39,7 @@ export default function CheckinForm() {
           maxLength={LIMITS.name}
           autoComplete="name"
           enterKeyHint="next"
-          placeholder="Ej: Carlos Pérez"
+          placeholder={isMissing ? "Ej: María Rodríguez" : "Ej: Carlos Pérez"}
         />
         <FieldError message={state.fieldErrors?.name} />
       </div>
@@ -44,7 +50,7 @@ export default function CheckinForm() {
         </legend>
         <div className="grid gap-2">
           {(Object.keys(CHECKIN_STATUSES) as Array<keyof typeof CHECKIN_STATUSES>).map(
-            (key, i) => {
+            (key) => {
               const s = CHECKIN_STATUSES[key];
               return (
                 <label
@@ -55,7 +61,8 @@ export default function CheckinForm() {
                     type="radio"
                     name="status"
                     value={key}
-                    defaultChecked={i === 0}
+                    checked={status === key}
+                    onChange={() => setStatus(key)}
                     className="h-5 w-5 accent-[#2563a8]"
                   />
                   <span aria-hidden className="text-xl">{s.emoji}</span>
@@ -86,13 +93,17 @@ export default function CheckinForm() {
           id="message"
           name="message"
           maxLength={LIMITS.message}
-          placeholder="Ej: Estoy bien con mi familia."
+          placeholder={
+            isMissing
+              ? "Detalles: edad, contextura, ropa, dónde se le vio por última vez"
+              : "Ej: Estoy bien con mi familia."
+          }
         />
       </div>
 
       <div>
         <Label htmlFor="phone" hint="(privado, no se muestra)">
-          Teléfono / WhatsApp
+          {isMissing ? "Tu contacto (privado)" : "Teléfono / WhatsApp"}
         </Label>
         <TextInput
           id="phone"
@@ -109,13 +120,22 @@ export default function CheckinForm() {
       </div>
 
       <div>
-        <Label htmlFor="location">Ubicación (opcional)</Label>
-        <LocationPicker />
+        <Label htmlFor="location" required={status !== "SAFE"}>
+          {isMissing ? "Última ubicación conocida" : "Ubicación"}
+        </Label>
+        <LocationPicker required={status !== "SAFE"} />
+        <FieldError message={state.fieldErrors?.location} />
       </div>
 
-      <SubmitButton tone="safe" pendingLabel="Guardando…">
-        Registrar mi estado
-      </SubmitButton>
+      {isMissing ? (
+        <SubmitButton tone="action" pendingLabel="Guardando…">
+          Publicar reporte
+        </SubmitButton>
+      ) : (
+        <SubmitButton tone="safe" pendingLabel="Guardando…">
+          Registrar mi estado
+        </SubmitButton>
+      )}
     </form>
   );
 }

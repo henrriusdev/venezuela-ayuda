@@ -19,6 +19,7 @@ const CATEGORY_HINTS: Record<HelpCategory, string[]> = {
   shelter: ["refugio", "techo", "dormir", "casa destruid", "sin hogar", "albergue", "carpa"],
   electricity: ["luz", "electric", "energía", "energia", "apagón", "apagon", "planta", "generador"],
   transportation: ["transport", "traslad", "vehícul", "vehicul", "carro", "gasolina", "llevar"],
+  tools: ["herramient", "taladro", "casco", "pala", "pico", "guante", "cuerda", "motosierra", "carretilla", "palanca", "equipo", "linterna", "escalera"],
 };
 
 const CRITICAL = ["atrapad", "no respira", "oxígeno", "oxigeno", "sangr", "grave", "morir", "muriendo", "derrumb", "sepultad", "crítico", "critico", "urgente ya"];

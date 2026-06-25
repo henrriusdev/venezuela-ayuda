@@ -20,9 +20,9 @@ export default async function Page({
   const sp = await searchParams;
   const name = sp.nombre?.trim() || "";
   const city = sp.ciudad?.trim() || "";
-  const hasQuery = Boolean(name || city);
+  const hasQuery = name.length >= 2 || city.length >= 2;
 
-  const results = await searchCheckins({ name, city });
+  const results = hasQuery ? await searchCheckins({ name, city }) : [];
 
   return (
     <PageShell
@@ -59,40 +59,46 @@ export default async function Page({
       </form>
 
       <div className="mt-6">
-        {hasQuery && (
-          <p className="mb-3 text-sm text-slate-500">
-            {results.length} resultado{results.length === 1 ? "" : "s"}
-            {name && ` para “${name}”`}
-            {city && ` en ${city}`}
-          </p>
-        )}
-
-        {results.length === 0 && (
+        {!hasQuery ? (
           <div className="rounded-2xl bg-white p-6 text-center text-slate-600 ring-1 ring-black/5">
-            {hasQuery ? (
-              <>
+            <p className="font-semibold text-slate-800">
+              Escribe un nombre o ciudad para buscar.
+            </p>
+            <p className="mt-1 text-sm">
+              Por privacidad no mostramos un listado completo de personas.
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-slate-500">
+              {results.length} resultado{results.length === 1 ? "" : "s"}
+              {name && ` para “${name}”`}
+              {city && ` en ${city}`}
+            </p>
+
+            {results.length === 0 ? (
+              <div className="rounded-2xl bg-white p-6 text-center text-slate-600 ring-1 ring-black/5">
                 <p className="font-semibold text-slate-800">No encontramos a nadie todavía.</p>
                 <p className="mt-1 text-sm">
                   La persona quizá aún no se ha reportado. Comparte el enlace para que se marque
                   a salvo.
                 </p>
-              </>
+                <Link
+                  href="/a-salvo?modo=desaparecido"
+                  className="mt-4 inline-block rounded-[15px] bg-[#2563a8] px-5 py-3 font-semibold text-white"
+                >
+                  Reportar a una persona como desaparecida
+                </Link>
+              </div>
             ) : (
-              <>
-                <p className="font-semibold text-slate-800">Reportes recientes</p>
-                <p className="mt-1 text-sm">
-                  Escribe un nombre o ciudad para filtrar, o revisa los últimos reportes abajo.
-                </p>
-              </>
+              <div className="grid gap-3">
+                {results.map((c) => (
+                  <CheckinCard key={c.id} c={c} />
+                ))}
+              </div>
             )}
-          </div>
+          </>
         )}
-
-        <div className="mt-4 grid gap-3">
-          {results.map((c) => (
-            <CheckinCard key={c.id} c={c} />
-          ))}
-        </div>
 
         <div className="mt-8 rounded-2xl bg-slate-100 p-4 text-center text-sm text-slate-600">
           ¿No lo encuentras?{" "}

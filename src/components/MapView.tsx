@@ -8,11 +8,9 @@ import { getMapStyle } from "@/lib/mapStyle";
 import type { MapMarker, MarkerKind } from "@/lib/types";
 
 const KIND_META: Record<MarkerKind, { color: string; label: string; emoji: string }> = {
-  safe: { color: "#2f9e6e", label: "A salvo", emoji: "✅" },
-  needs_help: { color: "#c9483a", label: "Necesita ayuda", emoji: "🆘" },
-  looking: { color: "#b5811f", label: "Busca a alguien", emoji: "🔎" },
-  request: { color: "#e2603a", label: "Solicitudes de ayuda", emoji: "🚨" },
-  offer: { color: "#2563a8", label: "Ofrece ayuda", emoji: "🤝" },
+  need: { color: "#e2603a", label: "Necesitan ayuda", emoji: "🆘" },
+  missing: { color: "#b5811f", label: "Desaparecidos", emoji: "🔎" },
+  helper: { color: "#2563a8", label: "Voluntarios", emoji: "🤝" },
 };
 const ALL_KINDS = Object.keys(KIND_META) as MarkerKind[];
 
@@ -27,7 +25,13 @@ function toGeoJSON(markers: MapMarker[]) {
   };
 }
 
-export default function MapView({ markers }: { markers: MapMarker[] }) {
+export default function MapView({
+  markers,
+  heightClass = "h-[70vh] min-h-[420px]",
+}: {
+  markers: MapMarker[];
+  heightClass?: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [ready, setReady] = useState(false);
@@ -124,7 +128,7 @@ export default function MapView({ markers }: { markers: MapMarker[] }) {
           const f = e.features?.[0] as MapGeoJSONFeature | undefined;
           if (!f) return;
           const p = f.properties as Record<string, string>;
-          const meta = KIND_META[p.kind as MarkerKind] ?? KIND_META.safe;
+          const meta = KIND_META[p.kind as MarkerKind] ?? KIND_META.need;
           const coords = (f.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
           const html = `<div style="max-width:220px;font-family:system-ui">
             <div style="font-weight:700;color:${meta.color}">${meta.emoji} ${escapeHtml(meta.label)}</div>
@@ -198,7 +202,7 @@ export default function MapView({ markers }: { markers: MapMarker[] }) {
       </div>
 
       <div className="relative">
-        <div ref={containerRef} className="h-[70vh] min-h-[420px] w-full" />
+        <div ref={containerRef} className={`${heightClass} w-full`} />
         {!ready && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-500">
             Cargando mapa…

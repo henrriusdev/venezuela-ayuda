@@ -9,7 +9,7 @@ import { getMapStyle } from "@/lib/mapStyle";
 // Optional location picker. Writes lat/lng into hidden inputs so the parent
 // <form> submits them. The map is lazy-loaded (dynamic import of maplibre-gl)
 // only when the user opens it — keeping the initial form payload tiny.
-export default function LocationPicker() {
+export default function LocationPicker({ required = false }: { required?: boolean }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -100,6 +100,12 @@ export default function LocationPicker() {
           {open ? "Ocultar mapa" : "Elegir en el mapa"}
         </button>
       </div>
+
+      {required && !coords && (
+        <p className="mt-2 text-sm text-slate-500">
+          Obligatorio: toca el mapa o usa tu ubicación.
+        </p>
+      )}
 
       {geoError && <p className="mt-2 text-sm text-amber-700">{geoError}</p>}
 

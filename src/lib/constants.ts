@@ -6,7 +6,7 @@
 export const CHECKIN_STATUSES = {
   SAFE: { label: "A salvo", emoji: "✅", pin: "#2f9e6e", tintBg: "#eaf3ec", tintText: "#1f7a52" },
   NEEDS_HELP: { label: "Necesita ayuda", emoji: "🆘", pin: "#e2603a", tintBg: "#fdf0e9", tintText: "#c05a32" },
-  LOOKING_FOR_SOMEONE: { label: "Busca a alguien", emoji: "🔎", pin: "#b5811f", tintBg: "#fff5e6", tintText: "#b5811f" },
+  LOOKING_FOR_SOMEONE: { label: "En búsqueda", emoji: "🔎", pin: "#b5811f", tintBg: "#fff5e6", tintText: "#b5811f" },
 } as const;
 export type CheckinStatus = keyof typeof CHECKIN_STATUSES;
 
@@ -18,8 +18,30 @@ export const HELP_CATEGORIES = {
   transportation: { label: "Transporte", emoji: "🚗" },
   electricity: { label: "Electricidad", emoji: "⚡" },
   rescue: { label: "Rescate", emoji: "🚨" },
+  tools: { label: "Herramientas", emoji: "🛠️" },
 } as const;
 export type HelpCategory = keyof typeof HELP_CATEGORIES;
+
+// Quick-pick list of tools/equipment commonly needed after an earthquake.
+// Shown as chips in the help request form so people can add them fast.
+export const COMMON_TOOLS = [
+  "Taladro",
+  "Casco",
+  "Botas de trabajo",
+  "Guantes",
+  "Pala",
+  "Pico",
+  "Linterna",
+  "Cuerda",
+  "Generador",
+  "Motosierra",
+  "Carretilla",
+  "Barra / palanca",
+  "Mascarilla",
+  "Gato hidráulico",
+  "Escalera",
+  "Botiquín",
+] as const;
 
 export const OFFER_CATEGORIES = {
   transportation: { label: "Transporte", emoji: "🚗" },
@@ -73,4 +95,8 @@ export const LIMITS = {
   description: 800,
   phone: 30,
   availability: 200,
+  place_name: 120,
+  itemName: 40,
+  maxItems: 25,
+  maxQty: 999,
 } as const;

@@ -21,6 +21,12 @@ export interface PublicCheckin {
   created_at: string;
 }
 
+// A needed tool/equipment with an estimated quantity.
+export interface NeededItem {
+  name: string;
+  qty: number;
+}
+
 export interface PublicHelpRequest {
   id: string;
   category: HelpCategory;
@@ -31,6 +37,8 @@ export interface PublicHelpRequest {
   longitude: number | null;
   status: RequestStatus;
   created_at: string;
+  place_name: string | null;
+  items: NeededItem[] | null;
 }
 
 export interface PublicHelpOffer {
@@ -47,8 +55,9 @@ export interface PublicHelpOffer {
 
 export type LatLng = { lat: number; lng: number };
 
-// Unified shape consumed by the map.
-export type MarkerKind = "safe" | "needs_help" | "looking" | "request" | "offer";
+// Unified shape consumed by the map. Three kinds: places that need help,
+// missing people, and available helpers.
+export type MarkerKind = "need" | "missing" | "helper";
 
 export interface MapMarker {
   id: string;

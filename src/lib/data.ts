@@ -6,7 +6,8 @@ import type {
   PublicHelpOffer,
   MapMarker,
 } from "@/lib/types";
-import { HELP_CATEGORIES, OFFER_CATEGORIES, URGENCY_LEVELS } from "@/lib/constants";
+import { HELP_CATEGORIES, OFFER_CATEGORIES } from "@/lib/constants";
+import { formatItems } from "@/lib/validation";
 
 // All reads go through the public_* views, which never include phone/contact.
 
@@ -53,11 +54,14 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
       .from("public_checkins")
       .select("id,name,status,city,latitude,longitude,message,created_at")
       .not("latitude", "is", null)
+      .neq("status", "SAFE")
       .order("created_at", { ascending: false })
       .limit(2000),
     supabase
       .from("public_help_requests")
-      .select("id,category,description,urgency,city,latitude,longitude,status,created_at")
+      .select(
+        "id,category,description,urgency,city,latitude,longitude,status,created_at,place_name,items",
+      )
       .not("latitude", "is", null)
       .neq("status", "RESOLVED")
       .order("created_at", { ascending: false })
@@ -74,26 +78,41 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
   const markers: MapMarker[] = [];
 
   for (const c of (checkins.data ?? []) as PublicCheckin[]) {
-    markers.push({
-      id: `c_${c.id}`,
-      kind:
-        c.status === "SAFE" ? "safe" : c.status === "NEEDS_HELP" ? "needs_help" : "looking",
-      lat: c.latitude!,
-      lng: c.longitude!,
-      title: c.name,
-      subtitle: c.city ?? c.message ?? undefined,
-      href: `/persona/${c.id}`,
-    });
+    if (c.status === "NEEDS_HELP") {
+      markers.push({
+        id: `c_${c.id}`,
+        kind: "need",
+        lat: c.latitude!,
+        lng: c.longitude!,
+        title: c.name,
+        subtitle: c.city ?? c.message ?? undefined,
+        href: `/persona/${c.id}`,
+      });
+    } else if (c.status === "LOOKING_FOR_SOMEONE") {
+      markers.push({
+        id: `c_${c.id}`,
+        kind: "missing",
+        lat: c.latitude!,
+        lng: c.longitude!,
+        title: c.name,
+        subtitle: c.city ? `Última ubicación: ${c.city}` : c.message ?? undefined,
+        href: `/persona/${c.id}`,
+      });
+    }
   }
 
   for (const r of (requests.data ?? []) as PublicHelpRequest[]) {
+    const items = formatItems(r.items);
+    const subtitle = [r.description?.slice(0, 120), items ? `🛠️ ${items}` : ""]
+      .filter(Boolean)
+      .join(" · ");
     markers.push({
       id: `r_${r.id}`,
-      kind: "request",
+      kind: "need",
       lat: r.latitude!,
       lng: r.longitude!,
-      title: `${HELP_CATEGORIES[r.category]?.label ?? r.category} · ${URGENCY_LEVELS[r.urgency]?.label ?? ""}`,
-      subtitle: r.description?.slice(0, 120),
+      title: r.place_name || (HELP_CATEGORIES[r.category]?.label ?? r.category),
+      subtitle: subtitle || undefined,
       href: "/mapa",
     });
   }
@@ -101,7 +120,7 @@ export async function getMapMarkers(): Promise<MapMarker[]> {
   for (const o of (offers.data ?? []) as PublicHelpOffer[]) {
     markers.push({
       id: `o_${o.id}`,
-      kind: "offer",
+      kind: "helper",
       lat: o.latitude!,
       lng: o.longitude!,
       title: `Ofrece: ${OFFER_CATEGORIES[o.category]?.label ?? o.category}`,

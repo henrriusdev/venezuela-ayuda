@@ -7,7 +7,26 @@ export const metadata: Metadata = {
   description: "Avisa a tu familia y amigos que estás bien.",
 };
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ modo?: string }>;
+}) {
+  const sp = await searchParams;
+  const isMissing = sp.modo === "desaparecido";
+
+  if (isMissing) {
+    return (
+      <PageShell
+        emoji="🔎"
+        title="Reportar persona desaparecida"
+        intro="Indica el nombre y la última ubicación conocida para que otros puedan ayudar a encontrarla."
+      >
+        <CheckinForm initialStatus="LOOKING_FOR_SOMEONE" />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       emoji="✅"

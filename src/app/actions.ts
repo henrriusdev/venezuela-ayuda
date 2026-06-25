@@ -8,6 +8,7 @@ import {
   cleanText,
   cleanOptional,
   parseLatLng,
+  parseItems,
   isValidStatus,
 } from "@/lib/validation";
 import { LIMITS, HELP_CATEGORIES, OFFER_CATEGORIES, URGENCY_LEVELS } from "@/lib/constants";
@@ -49,12 +50,14 @@ export async function submitCheckin(
 
   const name = cleanText(form.get("name"), LIMITS.name);
   const status = String(form.get("status") || "SAFE");
+  const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
+
   const fieldErrors: Record<string, string> = {};
   if (name.length < 2) fieldErrors.name = "Escribe un nombre.";
   if (!isValidStatus(status)) fieldErrors.status = "Selecciona un estado.";
+  if (status !== "SAFE" && !coords)
+    fieldErrors.location = "Indica la ubicación en el mapa.";
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
-
-  const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
 
   // Generate the id ourselves so we don't need to read the row back. Reading it
   // back would require a SELECT policy on `checkins`, which we deliberately omit
@@ -101,13 +104,16 @@ export async function submitHelpRequest(
   const urgency = String(form.get("urgency") || "MEDIUM");
   const description = cleanText(form.get("description"), LIMITS.description);
 
+  const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
+
   const fieldErrors: Record<string, string> = {};
   if (!(category in HELP_CATEGORIES)) fieldErrors.category = "Selecciona una categoría.";
   if (!(urgency in URGENCY_LEVELS)) fieldErrors.urgency = "Selecciona la urgencia.";
   if (description.length < 5) fieldErrors.description = "Describe brevemente la necesidad.";
+  if (!coords) fieldErrors.location = "Indica la ubicación en el mapa.";
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
 
-  const coords = parseLatLng(form.get("latitude"), form.get("longitude"));
+  const items = parseItems(form.get("items"));
 
   try {
     const supabase = getServerSupabase();
@@ -119,6 +125,8 @@ export async function submitHelpRequest(
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
       contact: cleanOptional(form.get("contact"), LIMITS.phone),
+      place_name: cleanOptional(form.get("place_name"), LIMITS.place_name),
+      items: items.length ? items : null,
     });
     if (error) throw error;
   } catch {

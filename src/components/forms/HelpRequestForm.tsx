@@ -2,7 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { submitHelpRequest, type ActionState } from "@/app/actions";
-import { HELP_CATEGORIES, URGENCY_LEVELS, LIMITS } from "@/lib/constants";
+import { HELP_CATEGORIES, URGENCY_LEVELS, LIMITS, COMMON_TOOLS } from "@/lib/constants";
+import type { NeededItem } from "@/lib/types";
 import { Label, TextInput, TextArea, FieldError, Honeypot } from "@/components/Field";
 import LocationPicker from "@/components/LocationPicker";
 import SubmitButton from "@/components/SubmitButton";
@@ -18,6 +19,8 @@ export default function HelpRequestForm() {
   const [urgency, setUrgency] = useState("MEDIUM");
   const [description, setDescription] = useState("");
   const [city, setCity] = useState("");
+  const [items, setItems] = useState<NeededItem[]>([]);
+  const [customTool, setCustomTool] = useState("");
   const [aiText, setAiText] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
@@ -49,6 +52,41 @@ export default function HelpRequestForm() {
       setAiBusy(false);
     }
   }
+
+  const hasItem = (name: string) => items.some((i) => i.name === name);
+
+  function toggleTool(name: string) {
+    setItems((prev) =>
+      prev.some((i) => i.name === name)
+        ? prev.filter((i) => i.name !== name)
+        : prev.length >= LIMITS.maxItems
+        ? prev
+        : [...prev, { name, qty: 1 }]
+    );
+  }
+
+  function setQty(name: string, delta: number) {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.name === name
+          ? { ...i, qty: Math.min(LIMITS.maxQty, Math.max(1, i.qty + delta)) }
+          : i
+      )
+    );
+  }
+
+  function removeItem(name: string) {
+    setItems((prev) => prev.filter((i) => i.name !== name));
+  }
+
+  function addCustomTool() {
+    const name = customTool.trim().slice(0, LIMITS.itemName);
+    if (!name || hasItem(name) || items.length >= LIMITS.maxItems) return;
+    setItems((prev) => [...prev, { name, qty: 1 }]);
+    setCustomTool("");
+  }
+
+  const toolsEmphasized = category === "tools" || category === "rescue";
 
   if (state.ok) {
     return (
@@ -95,6 +133,16 @@ export default function HelpRequestForm() {
           {state.error}
         </p>
       )}
+
+      <div>
+        <Label htmlFor="place_name">Nombre del lugar o edificio</Label>
+        <TextInput
+          id="place_name"
+          name="place_name"
+          maxLength={LIMITS.place_name}
+          placeholder="Ej: Residencias El Parque"
+        />
+      </div>
 
       <fieldset>
         <legend className="mb-2 block font-semibold text-slate-800">
@@ -178,6 +226,110 @@ export default function HelpRequestForm() {
         <FieldError message={state.fieldErrors?.urgency} />
       </fieldset>
 
+      {/* Tools / equipment picker */}
+      <fieldset
+        className="rounded-[15px] border p-4"
+        style={
+          toolsEmphasized
+            ? { borderColor: "#2563a8", backgroundColor: "#f0f5fb", borderWidth: 2 }
+            : { borderColor: "#e6ecf2" }
+        }
+      >
+        <legend className="px-1 font-semibold text-slate-800">
+          🛠️ Herramientas / equipos necesarios
+          <span className="ml-2 font-normal text-slate-500">(opcional)</span>
+        </legend>
+
+        <div className="flex flex-wrap gap-2">
+          {COMMON_TOOLS.map((t) => {
+            const on = hasItem(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => toggleTool(t)}
+                className="rounded-full border px-3 py-1.5 text-sm font-semibold active:scale-[0.99]"
+                style={
+                  on
+                    ? { borderColor: "#2563a8", backgroundColor: "#2563a8", color: "#fff" }
+                    : { borderColor: "#e6ecf2", backgroundColor: "#fff", color: "#33414f" }
+                }
+              >
+                {on ? "✓ " : "+ "}
+                {t}
+              </button>
+            );
+          })}
+        </div>
+
+        {items.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {items.map((it) => (
+              <li
+                key={it.name}
+                className="flex items-center gap-2 rounded-[12px] border border-[#e6ecf2] bg-white px-3 py-2"
+              >
+                <span className="flex-1 truncate font-medium text-slate-800">{it.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setQty(it.name, -1)}
+                    aria-label={`Restar ${it.name}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e6ecf2] text-lg font-bold text-slate-700 active:scale-95"
+                  >
+                    −
+                  </button>
+                  <span className="w-8 text-center font-semibold tabular-nums text-slate-800">
+                    {it.qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQty(it.name, 1)}
+                    aria-label={`Sumar ${it.name}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e6ecf2] text-lg font-bold text-slate-700 active:scale-95"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeItem(it.name)}
+                  aria-label={`Quitar ${it.name}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-slate-400 hover:text-red-600"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-3 flex gap-2">
+          <TextInput
+            value={customTool}
+            onChange={(e) => setCustomTool(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustomTool();
+              }
+            }}
+            maxLength={LIMITS.itemName}
+            placeholder="Otro…"
+          />
+          <button
+            type="button"
+            onClick={addCustomTool}
+            disabled={items.length >= LIMITS.maxItems}
+            className="shrink-0 rounded-xl bg-[#2563a8] px-4 py-3 font-semibold text-white disabled:opacity-60"
+          >
+            Agregar
+          </button>
+        </div>
+
+        <input type="hidden" name="items" value={JSON.stringify(items)} />
+      </fieldset>
+
       <div>
         <Label htmlFor="city">Ciudad</Label>
         <TextInput
@@ -206,8 +358,11 @@ export default function HelpRequestForm() {
       </div>
 
       <div>
-        <Label htmlFor="location">Ubicación</Label>
-        <LocationPicker />
+        <Label htmlFor="location" required>
+          Ubicación
+        </Label>
+        <LocationPicker required />
+        <FieldError message={state.fieldErrors?.location} />
       </div>
 
       <SubmitButton tone="emergency" pendingLabel="Enviando…">
