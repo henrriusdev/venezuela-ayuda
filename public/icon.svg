@@ -8,14 +8,14 @@
     <rect y="16" width="48" height="16" fill="#00247d"/>
     <rect y="32" width="48" height="16" fill="#cf142b"/>
     <g fill="#fff">
-      <use href="#vaStar" x="7" y="21.2"/>
-      <use href="#vaStar" x="12" y="22"/>
-      <use href="#vaStar" x="17" y="22.7"/>
-      <use href="#vaStar" x="21.7" y="23.1"/>
-      <use href="#vaStar" x="26.3" y="23.1"/>
-      <use href="#vaStar" x="31" y="22.7"/>
-      <use href="#vaStar" x="36" y="22"/>
-      <use href="#vaStar" x="41" y="21.2"/>
+      <use href="#vaStar" x="7" y="24.2"/>
+      <use href="#vaStar" x="12" y="23.3"/>
+      <use href="#vaStar" x="17" y="22.5"/>
+      <use href="#vaStar" x="21.7" y="22"/>
+      <use href="#vaStar" x="26.3" y="22"/>
+      <use href="#vaStar" x="31" y="22.5"/>
+      <use href="#vaStar" x="36" y="23.3"/>
+      <use href="#vaStar" x="41" y="24.2"/>
     </g>
   </g>
 </svg>

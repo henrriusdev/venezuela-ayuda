@@ -1,15 +1,16 @@
 // Venezuelan flag (civil flag: tricolor + 8 white stars), as a rounded icon.
 // Used in the header; the same artwork lives in /icon.svg and app/icon.svg for
 // the favicon and PWA manifest.
+// 8 stars in a downward-facing arc (∩): middle stars sit higher than the ends.
 const STARS: Array<[number, number]> = [
-  [7, 21.2],
-  [12, 22],
-  [17, 22.7],
-  [21.7, 23.1],
-  [26.3, 23.1],
-  [31, 22.7],
-  [36, 22],
-  [41, 21.2],
+  [7, 24.2],
+  [12, 23.3],
+  [17, 22.5],
+  [21.7, 22],
+  [26.3, 22],
+  [31, 22.5],
+  [36, 23.3],
+  [41, 24.2],
 ];
 
 const STAR_PATH =
