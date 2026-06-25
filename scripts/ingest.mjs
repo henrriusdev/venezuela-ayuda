@@ -395,8 +395,14 @@ async function main() {
     return;
   }
 
-  for (const t of Object.keys(toInsert))
-    if (toInsert[t].length) await insertBatch(t, toInsert[t]);
+  for (const t of Object.keys(toInsert)) {
+    if (!toInsert[t].length) continue;
+    try {
+      await insertBatch(t, toInsert[t]);
+    } catch (e) {
+      console.log(`\ninsert ${t} FAILED (others still ran): ${e.message}`);
+    }
+  }
   console.log("\nDone.");
 }
 
