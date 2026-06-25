@@ -35,6 +35,7 @@
     "contributeTitle": "Contribuir",
     "contributeBody": "Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar —desarrollo, datos, difusión o verificación de información— escríbeme a <email>hola@maw.dev</email>.",
     "madeWith": "Hecho con cariño para Venezuela. 🇻🇪",
-    "tagline": "Venezuela Ayuda · Plataforma comunitaria de emergencia"
+    "tagline": "Venezuela Ayuda · Plataforma comunitaria de emergencia",
+    "noAffiliation": "Iniciativa ciudadana independiente. No estamos afiliados al gobierno ni a ninguna institución oficial."
   }
 }

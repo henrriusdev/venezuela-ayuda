@@ -202,9 +202,21 @@ export default async function Home() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/maw-dev.webp" alt="maw.dev" className="h-9 w-9 rounded-lg" />
           </a>
+          <a
+            href="https://github.com/mawmawmaw/venezuela-ayuda"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            className="shrink-0 text-[#5b6b7b] transition hover:text-[#14212e]"
+          >
+            <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor" aria-hidden>
+              <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.21 11.16.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.71-4.04-1.58-4.04-1.58-.55-1.37-1.34-1.74-1.34-1.74-1.09-.73.08-.72.08-.72 1.2.08 1.84 1.21 1.84 1.21 1.07 1.8 2.81 1.28 3.5.98.11-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.24-3.17-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.21a11.5 11.5 0 0 1 6 0c2.29-1.53 3.3-1.21 3.3-1.21.66 1.65.24 2.87.12 3.17.77.83 1.24 1.88 1.24 3.17 0 4.53-2.81 5.53-5.49 5.82.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .31.21.68.83.56A12.01 12.01 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z" />
+            </svg>
+          </a>
         </div>
 
         <p className="mt-3">{t("footer.tagline")}</p>
+        <p className="mt-1 text-xs">{t("footer.noAffiliation")}</p>
       </footer>
     </>
   );
