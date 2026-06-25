@@ -5,6 +5,7 @@ import MapView from "@/components/MapView";
 import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
 import DigitelMeasure from "@/components/DigitelMeasure";
+import IngenieriaSolidariaMeasure from "@/components/IngenieriaSolidariaMeasure";
 import { getStats, getMapMarkers } from "@/lib/data";
 
 export const revalidate = 60;
@@ -137,6 +138,7 @@ export default async function Home() {
           <div className="grid gap-4 md:grid-cols-2">
             <SupportMeasures />
             <DigitelMeasure />
+            <IngenieriaSolidariaMeasure />
           </div>
         </section>
       </main>
