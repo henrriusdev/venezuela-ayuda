@@ -359,7 +359,7 @@ async function src2026() {
 const SOURCES = [
   ["terremotovenezuela.com (edificios)", srcTvComBuildings],
   ["venezuelatebusca.com (desaparecidos)", srcTeBusca],
-  ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
+  // ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
   ["terremotovenezuela.app", srcAppEmergencia],
   ["terremotovenezuela2026", src2026],
 ];
