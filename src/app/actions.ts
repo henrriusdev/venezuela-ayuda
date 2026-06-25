@@ -17,7 +17,11 @@ import {
   OFFER_CATEGORIES,
   URGENCY_LEVELS,
   DAMAGE_SEVERITY,
+  RISK_QUESTION_IDS,
+  RISK_ANSWERS,
+  type RiskAnswer,
 } from "@/lib/constants";
+import { computeRisk, type RiskAnswers } from "@/lib/risk";
 import type { Sighting, RequestResponse } from "@/lib/types";
 
 export type ActionState = {
@@ -204,7 +208,28 @@ export async function submitDamagedReport(
     fieldErrors.place_name = "Escribe el nombre del edificio o lugar.";
   if (!(severity in DAMAGE_SEVERITY)) fieldErrors.severity = "Selecciona la gravedad.";
   if (!coords) fieldErrors.location = "Indica la ubicación en el mapa.";
+
+  // Optional structural-risk questionnaire. When enabled, all questions are
+  // required and the result is computed server-side (never trust the client).
+  const riskEnabled = form.get("risk_enabled") === "1";
+  const validAnswers = new Set(RISK_ANSWERS.map((a) => a.value));
+  let riskAnswers: RiskAnswers | null = null;
+  if (riskEnabled) {
+    const collected: RiskAnswers = {};
+    let complete = true;
+    for (const qid of RISK_QUESTION_IDS) {
+      const v = String(form.get(`risk_${qid}`) || "");
+      if (validAnswers.has(v as RiskAnswer)) collected[qid] = v as RiskAnswer;
+      else complete = false;
+    }
+    if (!complete)
+      fieldErrors.risk = "Responde todas las preguntas del cuestionario.";
+    else riskAnswers = collected;
+  }
+
   if (Object.keys(fieldErrors).length) return { ok: false, fieldErrors };
+
+  const risk = riskAnswers ? computeRisk(riskAnswers) : null;
 
   const id = crypto.randomUUID();
   const manageToken = crypto.randomUUID();
@@ -222,6 +247,9 @@ export async function submitDamagedReport(
       contact: cleanOptional(form.get("contact"), LIMITS.phone),
       photo_url: photoUrl,
       manage_token: manageToken,
+      risk_level: risk?.level ?? null,
+      risk_priority: risk?.priority ?? null,
+      risk_answers: riskAnswers,
     });
     if (error) throw error;
   } catch {

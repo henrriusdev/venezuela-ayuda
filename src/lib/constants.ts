@@ -83,6 +83,79 @@ export const DAMAGE_SEVERITY = {
 } as const;
 export type DamageSeverity = keyof typeof DAMAGE_SEVERITY;
 
+// Optional structural-risk questionnaire shown on the damaged-building form.
+// A community orientation guide — NOT a professional inspection — so it never
+// outputs a reassuring "safe/verde" result; the all-clear state is the neutral
+// "Sin señales graves observadas". The risk logic lives in lib/risk.ts.
+export const RISK_ANSWERS = [
+  { value: "si", label: "Sí" },
+  { value: "no", label: "No" },
+  { value: "nose", label: "No sé" },
+] as const;
+export type RiskAnswer = (typeof RISK_ANSWERS)[number]["value"];
+
+// Section 1 — severe signs. Any "Sí" ⇒ ROJO; any "No sé" ⇒ ≥ AMARILLO + priority.
+export const RISK_QUESTIONS_SEVERE = [
+  { id: "R1", text: "¿Alguna parte del edificio se cayó o se desprendió (techo, piso, escalera, balcón, pared, columna)?" },
+  { id: "R2", text: "¿El edificio o algún piso se ve inclinado, torcido o ladeado; puertas/ventanas en diagonal; un lado más hundido?" },
+  { id: "R3", text: "¿Las columnas que sostienen el edificio tienen grietas (no las paredes ni los frisos)?" },
+  { id: "R4", text: "¿Alguna columna tiene grietas en X o diagonales, concreto reventado, o cabillas expuestas o dobladas?" },
+  { id: "R5", text: "¿La planta baja se ve más dañada, aplastada o más baja que los pisos de arriba (piso blando)?" },
+  { id: "R6", text: "¿Hay grietas grandes donde las columnas se unen con el techo o las vigas?" },
+  { id: "R7", text: "¿Algún piso o techo se ve hundido, pandeado o caído, o ya no está a nivel?" },
+  { id: "R8", text: "¿El edificio chocó con el vecino y quedó dañado en la unión, o se separó dejando una abertura?" },
+  { id: "R9", text: "¿Hay grietas grandes en el suelo, hundimiento/levantamiento del terreno, o ladera con deslizamiento?" },
+  { id: "R10", text: "¿Hay tanques de agua, paredes, parapetos, vidrios, fachada o balcones a punto de caerse?" },
+] as const;
+
+// Section 2 — minor signs. Evaluated only when no severe "Sí"; any "Sí"/"No sé" ⇒ AMARILLO.
+export const RISK_QUESTIONS_MINOR = [
+  { id: "A1", text: "¿Hay grietas solo en paredes, frisos o tabiques (no en columnas ni estructura)?" },
+  { id: "A2", text: "¿Hay puertas o ventanas que antes abrían bien y ahora están trancadas?" },
+  { id: "A3", text: "¿Se cayeron lámparas, frisos, cerámica, cornisas o cielo raso?" },
+  { id: "A4", text: "¿Hay daños que no sabe si son graves, o no pudo ver bien las columnas y la estructura?" },
+] as const;
+
+// All questionnaire question ids (severe + minor), in display order.
+export const RISK_QUESTION_IDS = [
+  ...RISK_QUESTIONS_SEVERE.map((q) => q.id),
+  ...RISK_QUESTIONS_MINOR.map((q) => q.id),
+] as const;
+
+// Traffic-light outcomes. `ctas` controls which call-to-action buttons show on
+// the detail page. Never a green/"safe" result by design.
+export const RISK_LEVELS = {
+  ROJO: {
+    color: "#dc2626",
+    tintBg: "#fbe9e4",
+    title: "Riesgo — Peligro",
+    heading: "No entre ni permanezca en el edificio.",
+    body: "Se detectaron señales de daño estructural grave. Salga de inmediato si está dentro y no vuelva a entrar, ni siquiera para sacar cosas. Aléjese también de la fachada y la acera por riesgo de caídas. Avise a sus vecinos. Reportamos este edificio para que un ingeniero lo revise.",
+    ctas: ["ayuda"],
+  },
+  AMARILLO: {
+    color: "#ca8a04",
+    tintBg: "#fff5e6",
+    title: "Riesgo — Precaución",
+    heading: "No se confirmó que el edificio sea seguro.",
+    body: "Hay daños o señales que requieren revisión. No use el edificio normalmente y evite las zonas dañadas mientras continúen las réplicas. Un ingeniero debe revisarlo antes de volver a habitarlo. Reportamos este edificio para revisión.",
+    ctas: [],
+  },
+  NINGUNA: {
+    color: "#5b6b7b",
+    tintBg: "#f0f3f7",
+    title: "Sin señales graves observadas",
+    heading: "No se observaron señales graves, pero esto NO es una inspección.",
+    body: "Una revisión rápida desde afuera puede no ver daños internos u ocultos. Mantenga precaución durante las réplicas. Solo un ingeniero puede confirmar que el edificio es seguro.",
+    ctas: [],
+  },
+} as const;
+export type RiskLevel = keyof typeof RISK_LEVELS;
+
+// Permanent disclaimer shown under every questionnaire result.
+export const RISK_DISCLAIMER =
+  "Esta herramienta es una guía comunitaria de orientación, no una inspección profesional y no garantiza la seguridad de ningún edificio. Ante la duda, no entre. La decisión final corresponde a un ingeniero estructural.";
+
 // Shown when a missing-person check-in has been resolved (found_at set).
 export const FOUND_BADGE = {
   label: "Encontrado/a",
