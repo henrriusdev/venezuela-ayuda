@@ -1,0 +1,13 @@
+{
+  "buttonLabel": "Donate",
+  "buttonSub": "Support the earthquake response in Venezuela",
+  "modalTitle": "Donate to the earthquake response",
+  "orgDescription": "The VACC Foundation (Venezuelan American Chamber of Commerce) is a non-profit organization based in Coral Gables, Florida, dedicated to strengthening the Venezuelan community. Through this campaign it channels donations to support the earthquake response in Venezuela; your contribution helps bring assistance to those affected.",
+  "transparencyTitle": "Transparency & safety",
+  "transparency1": "Payment is processed securely with <b>Stripe</b>; your card details never pass through this site.",
+  "transparency2": "The VACC has operated since <b>1991</b> in Miami and its IRS financial filings (Form 990) are <link>publicly available</link>, so you can verify where the money goes.",
+  "transparency3": "It is a <b>501(c)(6)</b> non-profit; in the U.S. donations are not tax-deductible.",
+  "learnMore": "Learn more about the foundation ↗",
+  "donateNow": "❤️ Donate now",
+  "close": "Close"
+}

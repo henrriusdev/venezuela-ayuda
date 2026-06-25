@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import FlagIcon from "@/components/FlagIcon";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const LINKS = [
-  { href: "/buscar", label: "Buscar" },
-  { href: "/mapa", label: "Mapa" },
-];
+  { href: "/buscar", key: "search" },
+  { href: "/mapa", key: "map" },
+] as const;
 
 export default function Header() {
   const pathname = usePathname();
+  const t = useTranslations("header");
 
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -32,10 +35,11 @@ export default function Header() {
                 }`}
                 style={active ? { backgroundColor: "#2563a8" } : undefined}
               >
-                {l.label}
+                {t(l.key)}
               </Link>
             );
           })}
+          <LanguageToggle />
         </nav>
       </div>
     </header>

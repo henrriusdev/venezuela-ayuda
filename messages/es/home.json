@@ -1,0 +1,40 @@
+{
+  "heroTitle": "Ayudemos a las víctimas del terremoto en Venezuela",
+  "heroSubtitle": "Conectando personas, familias y ayuda durante la emergencia.",
+  "actions": {
+    "searchLabel": "Buscar o Reportar persona desaparecida",
+    "searchSub": "Encuentra a alguien o crea un reporte",
+    "needHelpLabel": "Necesito ayuda",
+    "needHelpSub": "Solicita asistencia de emergencia",
+    "reportBuildingLabel": "Reportar edificio dañado",
+    "reportBuildingSub": "Reporta daños estructurales",
+    "safeLabel": "Estoy a salvo",
+    "safeSub": "Avisa a tu familia que estás bien",
+    "canHelpLabel": "Puedo ayudar",
+    "canHelpSub": "Ofrece tu apoyo a la comunidad",
+    "helpOutsideLabel": "Quiero ayudar fuera de Venezuela",
+    "helpOutsideSub": "Voluntariado y centros de acopio en tu ciudad",
+    "viewMapLabel": "Ver mapa de ayuda",
+    "viewMapSub": "Todo en un mapa interactivo"
+  },
+  "stats": {
+    "safe": "A salvo",
+    "missing": "Desaparecidos",
+    "found": "Encontrados",
+    "requests": "Solicitudes activas",
+    "helpers": "Voluntarios",
+    "damaged": "Edificios dañados"
+  },
+  "mapTitle": "Mapa de ayuda",
+  "mapViewFull": "Ver mapa completo →",
+  "measuresTitle": "Medidas de apoyo",
+  "sourcesLabel": "Fuentes de información:",
+  "footer": {
+    "noAccountTitle": "Sin cuenta. Gratis. Rápido.",
+    "noAccountBody": "No necesitas registrarte. Tu teléfono nunca se muestra públicamente. Funciona en conexiones lentas y teléfonos sencillos.",
+    "contributeTitle": "Contribuir",
+    "contributeBody": "Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar —desarrollo, datos, difusión o verificación de información— escríbeme a <email>hola@maw.dev</email>.",
+    "madeWith": "Hecho con cariño para Venezuela. 🇻🇪",
+    "tagline": "Venezuela Ayuda · Plataforma comunitaria de emergencia"
+  }
+}

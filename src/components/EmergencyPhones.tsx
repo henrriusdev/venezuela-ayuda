@@ -1,13 +1,16 @@
 // Emergency phone numbers for Caracas. Tappable (tel:) so people can call with
 // one touch on mobile.
-const PHONES = [
-  { number: "171", dial: "171", label: "Teléfono fijo CANTV" },
-  { number: "*1", dial: "*1", label: "Movilnet" },
-  { number: "112", dial: "112", label: "Digitel" },
-  { number: "911", dial: "911", label: "Movistar" },
-];
+import { getTranslations } from "next-intl/server";
 
-export default function EmergencyPhones() {
+const PHONES = [
+  { number: "171", dial: "171", key: "cantv" },
+  { number: "*1", dial: "*1", key: "movilnet" },
+  { number: "112", dial: "112", key: "digitel" },
+  { number: "911", dial: "911", key: "movistar" },
+] as const;
+
+export default async function EmergencyPhones() {
+  const t = await getTranslations("emergency");
   return (
     <section
       aria-labelledby="emergencia-title"
@@ -23,12 +26,12 @@ export default function EmergencyPhones() {
             fill="#dc2626"
           />
         </svg>
-        Teléfonos de emergencia
+        {t("title")}
       </h2>
 
       <ul className="grid grid-cols-2 gap-3">
         {PHONES.map((p) => (
-          <li key={p.label}>
+          <li key={p.key}>
             <a
               href={`tel:${p.dial}`}
               className="block rounded-2xl bg-[#f4f7fb] px-5 py-4 transition active:scale-[0.99] hover:bg-[#eef3fa]"
@@ -36,7 +39,7 @@ export default function EmergencyPhones() {
               <div className="text-3xl font-extrabold leading-none text-[#1e2a52]">
                 {p.number}
               </div>
-              <div className="mt-1.5 font-semibold text-[#8190a0]">{p.label}</div>
+              <div className="mt-1.5 font-semibold text-[#8190a0]">{t(p.key)}</div>
             </a>
           </li>
         ))}

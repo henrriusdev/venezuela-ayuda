@@ -8,12 +8,15 @@ import SupportMeasures from "@/components/SupportMeasures";
 import DigitelMeasure from "@/components/DigitelMeasure";
 import IngenieriaSolidariaMeasure from "@/components/IngenieriaSolidariaMeasure";
 import { getStats, getMapMarkers } from "@/lib/data";
+import { getTranslations, getLocale } from "next-intl/server";
 
 export const revalidate = 60;
 
 export default async function Home() {
   const [stats, markers] = await Promise.all([getStats(), getMapMarkers()]);
-  const fmt = (n: number) => n.toLocaleString("es-VE");
+  const t = await getTranslations("home");
+  const locale = await getLocale();
+  const fmt = (n: number) => n.toLocaleString(locale === "en" ? "en-US" : "es-VE");
 
   return (
     <>
@@ -22,10 +25,10 @@ export default async function Home() {
         {/* Hero (full width, above the two columns) */}
         <section>
           <h1 className="text-[26px] font-extrabold uppercase leading-tight tracking-tight text-[#14212e] sm:text-[34px]">
-            Ayudemos a las víctimas del terremoto en Venezuela
+            {t("heroTitle")}
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[#5b6b7b] sm:text-lg">
-            Conectando personas, familias y ayuda durante la emergencia.
+            {t("heroSubtitle")}
           </p>
         </section>
 
@@ -38,63 +41,63 @@ export default async function Home() {
           <BigButton
             href="/buscar"
             emoji="🔎"
-            label="Buscar o Reportar persona desaparecida"
-            sublabel="Encuentra a alguien o crea un reporte"
+            label={t("actions.searchLabel")}
+            sublabel={t("actions.searchSub")}
             tileBg="#eef3fa"
           />
           <BigButton
             href="/necesito-ayuda"
             emoji="🆘"
-            label="Necesito ayuda"
-            sublabel="Solicita asistencia de emergencia"
+            label={t("actions.needHelpLabel")}
+            sublabel={t("actions.needHelpSub")}
             tileBg="#fdf0e9"
             accent
           />
           <BigButton
             href="/reportar-edificio"
             emoji="🏚️"
-            label="Reportar edificio dañado"
-            sublabel="Reporta daños estructurales"
+            label={t("actions.reportBuildingLabel")}
+            sublabel={t("actions.reportBuildingSub")}
             tileBg="#f6dada"
           />
           <BigButton
             href="/a-salvo"
             emoji="✅"
-            label="Estoy a salvo"
-            sublabel="Avisa a tu familia que estás bien"
+            label={t("actions.safeLabel")}
+            sublabel={t("actions.safeSub")}
             tileBg="#eaf3ec"
           />
           <BigButton
             href="/puedo-ayudar"
             emoji="🤝"
-            label="Puedo ayudar"
-            sublabel="Ofrece tu apoyo a la comunidad"
+            label={t("actions.canHelpLabel")}
+            sublabel={t("actions.canHelpSub")}
             tileBg="#e9f6ef"
           />
           <BigButton
             href="/ayudar-fuera"
             emoji="🌍"
-            label="Quiero ayudar fuera de Venezuela"
-            sublabel="Voluntariado y centros de acopio en tu ciudad"
+            label={t("actions.helpOutsideLabel")}
+            sublabel={t("actions.helpOutsideSub")}
             tileBg="#eef3fa"
           />
           <BigButton
             href="/mapa"
             emoji="🗺️"
-            label="Ver mapa de ayuda"
-            sublabel="Todo en un mapa interactivo"
+            label={t("actions.viewMapLabel")}
+            sublabel={t("actions.viewMapSub")}
             tileBg="#eef3fa"
           />
         </section>
 
         {/* Live stats */}
         <section className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Estadísticas">
-          <Stat emoji="✅" value={fmt(stats.safe)} label="A salvo" color="#2f9e6e" />
-          <Stat emoji="🔎" value={fmt(stats.missing)} label="Desaparecidos" color="#b5811f" />
-          <Stat emoji="💚" value={fmt(stats.found)} label="Encontrados" color="#1f7a52" />
-          <Stat emoji="🆘" value={fmt(stats.requests)} label="Solicitudes activas" color="#e2603a" />
-          <Stat emoji="🤝" value={fmt(stats.helpers)} label="Voluntarios" color="#2563a8" />
-          <Stat emoji="🏚️" value={fmt(stats.damaged)} label="Edificios dañados" color="#7f1d1d" />
+          <Stat emoji="✅" value={fmt(stats.safe)} label={t("stats.safe")} color="#2f9e6e" />
+          <Stat emoji="🔎" value={fmt(stats.missing)} label={t("stats.missing")} color="#b5811f" />
+          <Stat emoji="💚" value={fmt(stats.found)} label={t("stats.found")} color="#1f7a52" />
+          <Stat emoji="🆘" value={fmt(stats.requests)} label={t("stats.requests")} color="#e2603a" />
+          <Stat emoji="🤝" value={fmt(stats.helpers)} label={t("stats.helpers")} color="#2563a8" />
+          <Stat emoji="🏚️" value={fmt(stats.damaged)} label={t("stats.damaged")} color="#7f1d1d" />
         </section>
 
         <div className="mt-5">
@@ -106,9 +109,9 @@ export default async function Home() {
           <div className="md:sticky md:top-6 md:self-start">
             <div className="overflow-hidden rounded-2xl border border-[#e6ecf2] bg-white">
               <div className="flex items-center justify-between gap-2 border-b border-[#e6ecf2] px-4 py-3">
-                <span className="text-sm font-semibold text-[#14212e]">🗺️ Mapa de ayuda</span>
+                <span className="text-sm font-semibold text-[#14212e]">🗺️ {t("mapTitle")}</span>
                 <Link href="/mapa" className="text-sm font-semibold text-[#2563a8]">
-                  Ver mapa completo →
+                  {t("mapViewFull")}
                 </Link>
               </div>
               <MapView
@@ -121,8 +124,8 @@ export default async function Home() {
         </div>
 
         {/* Support measures from operators/companies */}
-        <section className="mt-8" aria-label="Medidas de apoyo">
-          <h2 className="mb-3 text-lg font-bold text-[#14212e]">Medidas de apoyo</h2>
+        <section className="mt-8" aria-label={t("measuresTitle")}>
+          <h2 className="mb-3 text-lg font-bold text-[#14212e]">{t("measuresTitle")}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <SupportMeasures />
             <DigitelMeasure />
@@ -136,7 +139,7 @@ export default async function Home() {
         className="mx-auto w-full max-w-5xl px-4 pt-2"
       >
         <div className="rounded-2xl border border-[#e6ecf2] bg-white p-4 text-center text-xs leading-relaxed text-[#8190a0]">
-          <span className="font-semibold text-[#5b6b7b]">Fuentes de información:</span>{" "}
+          <span className="font-semibold text-[#5b6b7b]">{t("sourcesLabel")}</span>{" "}
           {[
             ["https://terremotovenezuela2026.vercel.app", "terremotovenezuela2026"],
             ["https://desaparecidosterremotovenezuela.com", "desaparecidosterremotovenezuela.com"],
@@ -162,31 +165,26 @@ export default async function Home() {
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">
         <div className="grid gap-4 text-left md:grid-cols-2">
           <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
-            <p className="font-semibold text-[#14212e]">Sin cuenta. Gratis. Rápido.</p>
-            <p className="mt-1">
-              No necesitas registrarte. Tu teléfono nunca se muestra públicamente.
-              Funciona en conexiones lentas y teléfonos sencillos.
-            </p>
+            <p className="font-semibold text-[#14212e]">{t("footer.noAccountTitle")}</p>
+            <p className="mt-1">{t("footer.noAccountBody")}</p>
           </div>
 
           <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
-            <p className="font-semibold text-[#14212e]">Contribuir</p>
+            <p className="font-semibold text-[#14212e]">{t("footer.contributeTitle")}</p>
             <p className="mt-1">
-              Este es un proyecto comunitario y sin fines de lucro. Si quieres
-              colaborar —desarrollo, datos, difusión o verificación de información—
-              escríbeme a{" "}
-              <a href="mailto:hola@maw.dev" className="font-semibold text-[#2563a8] underline">
-                hola@maw.dev
-              </a>
-              .
+              {t.rich("footer.contributeBody", {
+                email: (chunks) => (
+                  <a href="mailto:hola@maw.dev" className="font-semibold text-[#2563a8] underline">
+                    {chunks}
+                  </a>
+                ),
+              })}
             </p>
-            <p className="mt-3 font-medium text-[#14212e]">
-              Hecho con cariño para Venezuela. 🇻🇪
-            </p>
+            <p className="mt-3 font-medium text-[#14212e]">{t("footer.madeWith")}</p>
           </div>
         </div>
 
-        <p className="mt-4">Venezuela Ayuda · Plataforma comunitaria de emergencia</p>
+        <p className="mt-4">{t("footer.tagline")}</p>
       </footer>
     </>
   );

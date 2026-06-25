@@ -1,0 +1,40 @@
+{
+  "heroTitle": "Let's help the victims of the earthquake in Venezuela",
+  "heroSubtitle": "Connecting people, families and help during the emergency.",
+  "actions": {
+    "searchLabel": "Search or report a missing person",
+    "searchSub": "Find someone or create a report",
+    "needHelpLabel": "I need help",
+    "needHelpSub": "Request emergency assistance",
+    "reportBuildingLabel": "Report a damaged building",
+    "reportBuildingSub": "Report structural damage",
+    "safeLabel": "I'm safe",
+    "safeSub": "Let your family know you're okay",
+    "canHelpLabel": "I can help",
+    "canHelpSub": "Offer your support to the community",
+    "helpOutsideLabel": "I want to help from outside Venezuela",
+    "helpOutsideSub": "Volunteering and collection centers in your city",
+    "viewMapLabel": "View the help map",
+    "viewMapSub": "Everything on an interactive map"
+  },
+  "stats": {
+    "safe": "Safe",
+    "missing": "Missing",
+    "found": "Found",
+    "requests": "Active requests",
+    "helpers": "Volunteers",
+    "damaged": "Damaged buildings"
+  },
+  "mapTitle": "Help map",
+  "mapViewFull": "View full map →",
+  "measuresTitle": "Support measures",
+  "sourcesLabel": "Information sources:",
+  "footer": {
+    "noAccountTitle": "No account. Free. Fast.",
+    "noAccountBody": "No need to register. Your phone is never shown publicly. Works on slow connections and basic phones.",
+    "contributeTitle": "Contribute",
+    "contributeBody": "This is a non-profit community project. If you'd like to collaborate —development, data, outreach or information verification— write to me at <email>hola@maw.dev</email>.",
+    "madeWith": "Made with love for Venezuela. 🇻🇪",
+    "tagline": "Venezuela Ayuda · Community emergency platform"
+  }
+}

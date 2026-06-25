@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
 import Script from "next/script";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 import "./globals.css";
 import ConnectivityLayer from "@/components/ConnectivityLayer";
 
@@ -85,20 +87,24 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+  const t = await getTranslations("common");
   return (
-    <html lang="es" className={lexend.variable}>
+    <html lang={locale} className={lexend.variable}>
       <body className="min-h-dvh flex flex-col antialiased">
-        <a
-          href="#contenido"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:shadow"
-        >
-          Saltar al contenido
-        </a>
-        <ConnectivityLayer />
-        {children}
+        <NextIntlClientProvider>
+          <a
+            href="#contenido"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:shadow"
+          >
+            {t("skipToContent")}
+          </a>
+          <ConnectivityLayer />
+          {children}
+        </NextIntlClientProvider>
 
         {GA_ENABLED && (
           <>

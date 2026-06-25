@@ -1,0 +1,13 @@
+{
+  "buttonLabel": "Donar",
+  "buttonSub": "Apoya la respuesta al terremoto en Venezuela",
+  "modalTitle": "Dona a la respuesta al terremoto",
+  "orgDescription": "La Fundación VACC (Venezuelan American Chamber of Commerce) es una organización sin fines de lucro con sede en Coral Gables, Florida, dedicada a fortalecer a la comunidad venezolana. A través de esta campaña canaliza donaciones para apoyar la respuesta al terremoto en Venezuela; tu aporte ayuda a llevar asistencia a las personas afectadas.",
+  "transparencyTitle": "Transparencia y seguridad",
+  "transparency1": "El pago se procesa de forma segura con <b>Stripe</b>; los datos de tu tarjeta no pasan por este sitio.",
+  "transparency2": "La VACC opera desde <b>1991</b> en Miami y sus reportes financieros ante el IRS (Formulario 990) son <link>de acceso público</link>, así puedes verificar a dónde va el dinero.",
+  "transparency3": "Es una organización sin fines de lucro <b>501(c)(6)</b>; en EE. UU. las donaciones no son deducibles de impuestos.",
+  "learnMore": "Conocer más sobre la fundación ↗",
+  "donateNow": "❤️ Donar ahora",
+  "close": "Cerrar"
+}
