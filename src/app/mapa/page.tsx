@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import MapView from "@/components/MapView";
+import SourcesNote from "@/components/SourcesNote";
 import { getMapMarkers } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -42,9 +43,12 @@ export default async function Page() {
           <MapView markers={markers} />
         </div>
 
-        <p className="mx-auto max-w-5xl px-4 py-4 text-center text-sm text-slate-500">
-          Toca un punto para ver detalles. Usa los filtros para mostrar u ocultar categorías.
-        </p>
+        <div className="mx-auto max-w-5xl px-4 py-4">
+          <p className="text-center text-sm text-slate-500">
+            Toca un punto para ver detalles. Usa los filtros para mostrar u ocultar categorías.
+          </p>
+          <SourcesNote />
+        </div>
       </main>
     </>
   );

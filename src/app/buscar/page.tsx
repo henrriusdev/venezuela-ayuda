@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import CheckinCard from "@/components/CheckinCard";
+import SourcesNote from "@/components/SourcesNote";
 import { searchCheckins, searchHelpRequests } from "@/lib/data";
 import { HELP_CATEGORIES, URGENCY_LEVELS } from "@/lib/constants";
 import { timeAgo } from "@/lib/format";
@@ -187,6 +188,8 @@ export default async function Page({
           </Link>
           .
         </div>
+
+        <SourcesNote />
       </div>
     </PageShell>
   );
