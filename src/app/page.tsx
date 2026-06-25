@@ -84,6 +84,13 @@ export default async function Home() {
             tileBg="#e9f6ef"
           />
           <BigButton
+            href="/ayudar-fuera"
+            emoji="🌍"
+            label="Quiero ayudar fuera de Venezuela"
+            sublabel="Voluntariado y centros de acopio en tu ciudad"
+            tileBg="#eef3fa"
+          />
+          <BigButton
             href="/mapa"
             emoji="🗺️"
             label="Ver mapa de ayuda"
