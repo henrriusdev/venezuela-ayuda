@@ -4,6 +4,7 @@ import BigButton from "@/components/BigButton";
 import MapView from "@/components/MapView";
 import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
+import DigitelMeasure from "@/components/DigitelMeasure";
 import { getStats, getMapMarkers } from "@/lib/data";
 
 export const revalidate = 60;
@@ -101,9 +102,8 @@ export default async function Home() {
           <Stat emoji="🏚️" value={fmt(stats.damaged)} label="Edificios dañados" color="#7f1d1d" />
         </section>
 
-        <div className="mt-5 grid gap-5">
+        <div className="mt-5">
           <EmergencyPhones />
-          <SupportMeasures />
         </div>
           </div>
 
@@ -123,6 +123,15 @@ export default async function Home() {
             </div>
           </div>
         </div>
+
+        {/* Support measures from operators/companies */}
+        <section className="mt-8" aria-label="Medidas de apoyo">
+          <h2 className="mb-3 text-lg font-bold text-[#14212e]">Medidas de apoyo</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SupportMeasures />
+            <DigitelMeasure />
+          </div>
+        </section>
       </main>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">
