@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import StatusBadge from "@/components/StatusBadge";
 import SourceBadge from "@/components/SourceBadge";
 import { timeAgo } from "@/lib/format";
@@ -18,6 +19,8 @@ function initials(name: string): string {
 // avatar · name · location/updated line · status badge · quoted description ·
 // a small "Fuente:" link at the bottom (with "+N fuentes más" when merged).
 export default function PersonResultCard({ p }: { p: MergedPerson }) {
+  const t = useTranslations("search");
+  const tD = useTranslations("domain");
   const s = CHECKIN_STATUSES[p.status];
   const primary = p.sources[0];
   const extra = p.sources.length - 1;
@@ -45,7 +48,7 @@ export default function PersonResultCard({ p }: { p: MergedPerson }) {
           <h3 className="truncate text-base font-semibold text-[#14212e]">{p.name}</h3>
           <p className="mt-0.5 text-xs text-[#8190a0]">
             {p.locations.length > 0 && `🏢 ${p.locations.join(" · ")} · `}
-            {p.updated ? `Actualizado ${timeAgo(p.updated)}` : "Sin fecha"}
+            {p.updated ? t("card.metaUpdated", { time: timeAgo(p.updated) }) : t("card.noDate")}
           </p>
         </div>
         {p.found ? (
@@ -53,7 +56,7 @@ export default function PersonResultCard({ p }: { p: MergedPerson }) {
             className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold"
             style={{ backgroundColor: FOUND_BADGE.tintBg, color: FOUND_BADGE.tintText }}
           >
-            {FOUND_BADGE.emoji} {FOUND_BADGE.label}
+            {FOUND_BADGE.emoji} {tD("foundBadge")}
           </span>
         ) : (
           <StatusBadge status={p.status} />
@@ -71,15 +74,13 @@ export default function PersonResultCard({ p }: { p: MergedPerson }) {
               href={primary.href}
               className="inline-block font-medium text-[#2563a8] underline"
             >
-              Ver reporte en la app →
+              {t("card.viewInApp")}
             </Link>
           ) : (
             <SourceBadge source={primary.label} url={primary.href} />
           )}
           {extra > 0 && (
-            <span className="text-slate-400">
-              · +{extra} fuente{extra === 1 ? "" : "s"} más
-            </span>
+            <span className="text-slate-400">· {t("card.moreSources", { count: extra })}</span>
           )}
         </div>
       )}

@@ -22,7 +22,10 @@
   "seeMap": "see the map",
   "card": {
     "place": "🏢 {place} · ",
-    "metaUpdated": "Updated {time}"
+    "metaUpdated": "Updated {time}",
+    "noDate": "No date",
+    "viewInApp": "View report in the app →",
+    "moreSources": "+{count, plural, one {# more source} other {# more sources}}"
   },
   "sourcesIntro": "🌐 Includes data from allied citizen efforts —",
   "sourcesOutro": "and more — integrated and attributed automatically every 6 hours. External information is shown as \"unverified\"."

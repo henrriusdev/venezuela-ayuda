@@ -22,7 +22,10 @@
   "seeMap": "mira el mapa",
   "card": {
     "place": "🏢 {place} · ",
-    "metaUpdated": "Actualizado {time}"
+    "metaUpdated": "Actualizado {time}",
+    "noDate": "Sin fecha",
+    "viewInApp": "Ver reporte en la app →",
+    "moreSources": "+{count, plural, one {# fuente} other {# fuentes}} más"
   },
   "sourcesIntro": "🌐 Incluye datos de esfuerzos ciudadanos aliados —",
   "sourcesOutro": "y más — integrados y atribuidos automáticamente cada 6 horas. La información externa se muestra como «sin verificar»."
