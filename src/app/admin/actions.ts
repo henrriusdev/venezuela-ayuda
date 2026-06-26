@@ -135,6 +135,55 @@ export async function deleteReport(table: string, id: string): Promise<Result> {
   return { ok: true };
 }
 
+// --- Collection centers (centros de acopio) ---------------------------------
+export async function verifyCenter(id: string, verified: boolean): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
+  const svc = getServerSupabase();
+  const { error } = await svc.from("collection_centers").update({ verified }).eq("id", id);
+  if (error) return { ok: false, error: "No se pudo actualizar." };
+  revalidatePath("/mapa");
+  revalidatePath("/ayudar-fuera");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function setCenterHidden(id: string, hidden: boolean): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
+  const svc = getServerSupabase();
+  const { error } = await svc.from("collection_centers").update({ hidden }).eq("id", id);
+  if (error) return { ok: false, error: "No se pudo actualizar." };
+  revalidatePath("/mapa");
+  revalidatePath("/ayudar-fuera");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function deleteCenter(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
+  const svc = getServerSupabase();
+  const { error } = await svc.from("collection_centers").delete().eq("id", id);
+  if (error) return { ok: false, error: "No se pudo eliminar." };
+  revalidatePath("/mapa");
+  revalidatePath("/ayudar-fuera");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 // --- Manage admins -----------------------------------------------------------
 export async function addAdmin(email: string): Promise<Result> {
   let me: string;
