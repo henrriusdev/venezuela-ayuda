@@ -10,7 +10,7 @@
 // Requires migration 0007 applied. Reads keys from .env.local.
 
 import { readFileSync } from "node:fs";
-import { norm, fuzzyKey, personKey, geoCell, clusterNames } from "./dedup-lib.mjs";
+import { norm, personKey } from "./dedup-lib.mjs";
 
 const DRY = process.argv.includes("--dry");
 const DEDUP = process.argv.includes("--dedup"); // run the fuzzy dedup cleanup pass
@@ -475,15 +475,13 @@ async function dedupExisting() {
   };
   await dedupTable({
     table: "checkins",
-    select: "id,name,photo_url,message,created_at,found_at,source,latitude,longitude",
-    nameOf: (r) => r.name || "",
+    select: "id,dedup_key,photo_url,message,created_at,found_at,source",
     score: (r) => (r.photo_url ? 1e5 : 0) + (PERSON_RANK[r.source] ?? 0) * 1000 + (r.message ? r.message.length : 0),
   });
   // Edificios dañados: foto > descripción más larga. (Antes no se dedup-eaban.)
   await dedupTable({
     table: "damaged_reports",
-    select: "id,place_name,photo_url,description,created_at,source,latitude,longitude",
-    nameOf: (r) => r.place_name || "",
+    select: "id,dedup_key,photo_url,description,created_at,source",
     score: (r) => (r.photo_url ? 1e5 : 0) + (r.description ? r.description.length : 0),
   });
 }
@@ -491,7 +489,7 @@ async function dedupExisting() {
 // Dedup genérico de una tabla: agrupa nombres por identidad probable (clusterNames,
 // confianza >= 0.95 con veto de discriminadores) y borra duplicados dejando el
 // registro más rico (score). Conservador a propósito: ante la duda, deja el duplicado.
-async function dedupTable({ table, select, nameOf, score }) {
+async function dedupTable({ table, select, score }) {
   const rows = [];
   for (let from = 0; ; from += 1000) {
     const r = await fetch(`${REST}/${table}?select=${select}&source=not.is.null`, { headers: { ...H, Range: `${from}-${from + 999}` } });
@@ -503,29 +501,26 @@ async function dedupTable({ table, select, nameOf, score }) {
   }
   console.log(`[${table}] scanned ${rows.length} rows`);
 
-  const { clusters, skippedBuckets } = clusterNames(rows.map(nameOf), 0.95);
-  if (skippedBuckets) console.log(`[${table}] ${skippedBuckets} token bucket(s) too large to compare — left untouched (not silently merged)`);
+  // Group by the EXACT dedup_key (= personKey: name + region) — the same key the
+  // import uses. This makes import and cleanup agree on what a duplicate is, so the
+  // kept row is always one the import recognizes → no re-insertion churn / drift.
+  // Only true exact collisions (cross-source / legacy) are removed; the richest is
+  // kept. Fuzzy near-name merging is intentionally dropped (a visible duplicate is
+  // recoverable; a wrongly-deleted person is not).
+  const byKey = new Map();
+  for (const r of rows) {
+    if (!r.dedup_key) continue;
+    if (!byKey.has(r.dedup_key)) byKey.set(r.dedup_key, []);
+    byKey.get(r.dedup_key).push(r);
+  }
 
   const deleteIds = [];
   let dupGroups = 0;
-  for (const idxs of clusters) {
-    if (idxs.length < 2) continue;
-    // Split a name-cluster by region: only merge records in the SAME geo cell.
-    // Homónimos en regiones distintas son personas distintas y se conservan.
-    // Filas sin coords comparten la celda "" (se fusionan entre sí, igual que antes).
-    const byCell = new Map();
-    for (const i of idxs) {
-      const r = rows[i];
-      const cell = geoCell(r.latitude, r.longitude);
-      if (!byCell.has(cell)) byCell.set(cell, []);
-      byCell.get(cell).push(r);
-    }
-    for (const list of byCell.values()) {
-      if (list.length < 2) continue;
-      dupGroups++;
-      list.sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)));
-      for (const r of list.slice(1)) deleteIds.push(r.id);
-    }
+  for (const list of byKey.values()) {
+    if (list.length < 2) continue;
+    dupGroups++;
+    list.sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)));
+    for (const r of list.slice(1)) deleteIds.push(r.id);
   }
   console.log(`[${table}] ${dupGroups} duplicate groups → ${deleteIds.length} rows to remove`);
 
