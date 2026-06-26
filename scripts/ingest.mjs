@@ -224,14 +224,17 @@ async function srcDesaparecidos() {
   }
   return out.map((p) => {
     const name = clean(p.nombre, 80) || "Sin nombre";
-    const found = p.estado === "localizado";
     const g = geocode(p.ubicacion, `dtv:${p.id}`);
     return {
       table: "checkins",
       dedupKey: personKey(name, g?.lat, g?.lng),
       row: {
         name,
-        status: "LOOKING_FOR_SOMEONE", // found ones keep this status + found_at set
+        // SECURITY: do NOT trust this source's "localizado"/found status — it was
+        // compromised (2026-06-25) and mass-marked people as found. We import
+        // everyone as still-searching; a found state must come from our own users
+        // (the reporter's manage link) or a source we trust. `p.estado` ignored.
+        status: "LOOKING_FOR_SOMEONE",
         city: clean(p.ubicacion, 80),
         latitude: g?.lat ?? null,
         longitude: g?.lng ?? null,
@@ -239,7 +242,7 @@ async function srcDesaparecidos() {
         phone_private: clean(p.contacto, 30),
         photo_url: clean(p.foto, 500),
         place_name: clean(p.ubicacion, 120),
-        found_at: found ? new Date(p.updatedAt || Date.now()).toISOString() : null,
+        found_at: null,
         source: "desaparecidosterremotovenezuela.com",
         source_url: "https://desaparecidosterremotovenezuela.com",
         external_id: `dtv:${p.id}`,
