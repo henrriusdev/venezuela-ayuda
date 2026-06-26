@@ -45,18 +45,32 @@ const ABROAD = [
     address: "Centro Comercial Parques Polanco (al lado del Walmart), Lago Alberto 320, Granada, Miguel Hidalgo, Ciudad de México.", phone: "+52 55 49 14 5083", needs: ["centro-de-acopio"] },
 ];
 
+// PostgREST bulk insert requires every row to have the SAME keys → project to a
+// fixed shape, null for anything missing.
+const COLS = [
+  "name", "country", "state", "city", "address", "latitude", "longitude",
+  "description", "resources", "organizers", "contact", "website",
+  "can_ship_to_venezuela", "volunteers_count", "needs_volunteers", "needs",
+  "verified", "source",
+];
+const shape = (o) => Object.fromEntries(COLS.map((k) => [k, o[k] ?? (k === "needs" ? [] : null)]));
+
 const rows = [
-  ...VE.map((c) => ({
-    name: `Centro de acopio · ${c.state}`, country: "Venezuela", state: c.state,
-    address: c.address, latitude: c.lat, longitude: c.lng, resources: ACEPTAN,
-    needs: ["centro-de-acopio"], verified: true, source: "seed",
-  })),
-  ...ABROAD.map((p) => ({
-    name: p.name, country: p.country, city: p.city, address: p.address,
-    description: p.description ?? null, contact: p.phone ?? null, website: p.website ?? null,
-    needs_volunteers: p.needs.includes("voluntarios"),
-    needs: p.needs, verified: true, source: "seed",
-  })),
+  ...VE.map((c) =>
+    shape({
+      name: `Centro de acopio · ${c.state}`, country: "Venezuela", state: c.state,
+      address: c.address, latitude: c.lat, longitude: c.lng, resources: ACEPTAN,
+      needs: ["centro-de-acopio"], verified: true, source: "seed",
+    }),
+  ),
+  ...ABROAD.map((p) =>
+    shape({
+      name: p.name, country: p.country, city: p.city, address: p.address,
+      description: p.description ?? null, contact: p.phone ?? null, website: p.website ?? null,
+      needs_volunteers: p.needs.includes("voluntarios"),
+      needs: p.needs, verified: true, source: "seed",
+    }),
+  ),
 ];
 
 // Idempotent: clear prior seed, re-insert.
