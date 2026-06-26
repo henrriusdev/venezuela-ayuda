@@ -39,9 +39,11 @@ export async function getCollectionCenters(
   return (data ?? []) as PublicCollectionCenter[];
 }
 
-// Venezuela centers as map markers (kind "center").
+// Collection centers as map markers (kind "center") — Venezuela and international
+// alike. Any center with coordinates gets a pin; international centers also remain
+// in the /ayudar-fuera list.
 async function reliefCenterMarkers(): Promise<MapMarker[]> {
-  const centers = await getCollectionCenters(VENEZUELA);
+  const centers = await getCollectionCenters();
   return centers
     .filter((c) => c.latitude != null && c.longitude != null)
     .map((c) => ({
@@ -52,7 +54,7 @@ async function reliefCenterMarkers(): Promise<MapMarker[]> {
       title: c.name,
       subtitle: [c.address, c.resources].filter(Boolean).join(" · ") || undefined,
       href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        `${c.address ?? c.name} ${c.state ?? ""} Venezuela`,
+        [c.address ?? c.name, c.state ?? c.city ?? "", c.country].filter(Boolean).join(" "),
       )}`,
     }));
 }
