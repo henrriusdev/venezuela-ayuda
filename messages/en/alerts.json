@@ -1,0 +1,21 @@
+{
+  "title": "How to turn on earthquake alerts on your phone",
+  "intro": "Your phone can warn you seconds before an earthquake. Turn them on:",
+  "ios": "iPhone",
+  "android": "Android",
+  "iosSteps": [
+    "Open Settings.",
+    "Tap Notifications.",
+    "Scroll to the bottom of the screen.",
+    "Under “Government Alerts”, turn the alerts on. On recent iOS: “Enhanced Safety Alerts” → “Earthquake Alerts”."
+  ],
+  "iosNote": "They're usually on by default. Some official alerts can't be turned off.",
+  "androidSteps": [
+    "Open Settings.",
+    "Tap “Safety & emergency”. If you don't see it: “Location” → “Advanced”.",
+    "Tap “Earthquake alerts”.",
+    "Turn them on."
+  ],
+  "androidNote": "You need Wi-Fi or data turned on. It warns of magnitude 4.5+ earthquakes.",
+  "disclaimer": "Availability depends on your country, carrier and OS version."
+}

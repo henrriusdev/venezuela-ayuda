@@ -1,0 +1,21 @@
+{
+  "title": "Cómo activar las alertas sísmicas en tu celular",
+  "intro": "Tu teléfono puede avisarte segundos antes de un sismo. Actívalas:",
+  "ios": "iPhone",
+  "android": "Android",
+  "iosSteps": [
+    "Abre Ajustes.",
+    "Toca Notificaciones.",
+    "Baja hasta el final de la pantalla.",
+    "En «Alertas gubernamentales», activa las alertas. En iOS recientes: «Alertas de seguridad mejoradas» → «Alertas de terremotos»."
+  ],
+  "iosNote": "Suelen venir activadas por defecto. Algunas alertas oficiales no se pueden desactivar.",
+  "androidSteps": [
+    "Abre Ajustes.",
+    "Toca «Seguridad y emergencia». Si no aparece: «Ubicación» → «Avanzado».",
+    "Toca «Alertas de terremotos».",
+    "Actívalas."
+  ],
+  "androidNote": "Necesitas Wi-Fi o datos activados. Avisa de sismos de magnitud 4.5 o mayor.",
+  "disclaimer": "La disponibilidad depende de tu país, operador y versión del sistema."
+}

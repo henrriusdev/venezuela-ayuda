@@ -7,6 +7,7 @@ import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
 import DigitelMeasure from "@/components/DigitelMeasure";
 import IngenieriaSolidariaMeasure from "@/components/IngenieriaSolidariaMeasure";
+import SeismicAlerts from "@/components/SeismicAlerts";
 import { getStats, getMapMarkers } from "@/lib/data";
 import { getTranslations, getLocale } from "next-intl/server";
 
@@ -15,6 +16,7 @@ export const revalidate = 60;
 export default async function Home() {
   const [stats, markers] = await Promise.all([getStats(), getMapMarkers()]);
   const t = await getTranslations("home");
+  const tAlerts = await getTranslations("alerts");
   const locale = await getLocale();
   const fmt = (n: number) => n.toLocaleString(locale === "en" ? "en-US" : "es-VE");
 
@@ -123,15 +125,21 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Support measures from operators/companies */}
-        <section className="mt-8" aria-label={t("measuresTitle")}>
-          <h2 className="mb-3 text-lg font-bold text-[#14212e]">{t("measuresTitle")}</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <SupportMeasures />
-            <DigitelMeasure />
-            <IngenieriaSolidariaMeasure />
-          </div>
-        </section>
+        {/* Support measures + earthquake-alert how-to, side by side */}
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <section aria-label={t("measuresTitle")}>
+            <h2 className="mb-3 text-lg font-bold text-[#14212e]">{t("measuresTitle")}</h2>
+            <div className="grid gap-4">
+              <SupportMeasures />
+              <DigitelMeasure />
+              <IngenieriaSolidariaMeasure />
+            </div>
+          </section>
+          <section aria-label={tAlerts("title")}>
+            <h2 className="mb-3 text-lg font-bold text-[#14212e]">📳 {tAlerts("title")}</h2>
+            <SeismicAlerts />
+          </section>
+        </div>
       </main>
 
       <section
