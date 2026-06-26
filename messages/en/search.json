@@ -28,5 +28,5 @@
     "moreSources": "+{count, plural, one {# more source} other {# more sources}}"
   },
   "sourcesIntro": "🌐 Includes data from allied citizen efforts —",
-  "sourcesOutro": "and more — integrated and attributed automatically every 6 hours. External information is shown as \"unverified\"."
+  "sourcesOutro": "and more — integrated and attributed automatically every hour. External information is shown as \"unverified\"."
 }
