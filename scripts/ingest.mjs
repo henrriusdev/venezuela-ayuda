@@ -335,7 +335,7 @@ async function srcAppEmergencia() {
 const SOURCES = [
   ["terremotovenezuela.com (edificios)", srcTvComBuildings],
   ["venezuelatebusca.com (desaparecidos)", srcTeBusca],
-  ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
+  // ["desaparecidosterremotovenezuela.com", srcDesaparecidos],
   ["terremotovenezuela.app", srcAppEmergencia],
 ];
 
