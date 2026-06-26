@@ -58,9 +58,10 @@ messages/{es,en}/ traducciones por namespace (next-intl)
 ### Esquema de datos
 
 Tablas: `checkins` (personas), `help_requests`, `help_offers`, `damaged_reports`,
-`sightings` + `request_responses` (relay de contacto), `admin_emails`,
-`applied_migrations`. Cada tabla tiene una columna generada `location
-geography(Point,4326)`. Enums para estado / categoría / urgencia / gravedad.
+`collection_centers` (centros de acopio), `sightings` + `request_responses`
+(relay de contacto), `admin_emails`, `applied_migrations`. Cada tabla tiene una
+columna generada `location geography(Point,4326)`. Enums para estado / categoría /
+urgencia / gravedad.
 
 Los clientes **solo** leen las vistas `public_*`, que **excluyen** los campos
 privados (`phone_private`, `contact`, `manage_token`, contactos de relay).
