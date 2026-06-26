@@ -197,6 +197,9 @@ async function srcTeBusca() {
   });
 }
 
+// Kept (commented out of SOURCES) so the desaparecidos scrape can be re-enabled
+// quickly if/when the source is trustworthy again. See the note on SOURCES.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function srcDesaparecidos() {
   const out = [];
   for (let page = 1; ; page++) {
