@@ -1,6 +1,12 @@
 {
-  "yummyTitle": "💚 Yummy · medidas de apoyo (hoy)",
-  "yummyBody": "Viajes gratis a hospitales y clínicas en Caracas, sin tarifas dinámicas el resto del día.",
+  "yummyTitle": "💚 Yummy · ayuda en la emergencia",
+  "yummyBody": "Yummy pone su red logística al servicio de la emergencia: moviliza repartidores, conductores y farmacias aliadas para llevar ayuda a las zonas afectadas.",
+  "yummyItems": [
+    "Entregas de emergencia gratis: agua, alimentos y medicinas sin costo a refugios y hogares aislados en las zonas afectadas.",
+    "Yummy Rides solidario: traslados gratuitos a refugios, hospitales y puntos de reunión familiar para personas damnificadas.",
+    "Farmacia 24 h: medicamentos esenciales coordinados con farmacias aliadas y priorizados para entrega inmediata.",
+    "Donaciones con YummyCredits: convierte tu saldo o aporta directamente; el 100% se transforma en kits de ayuda distribuidos por su red."
+  ],
   "yummyViewOriginal": "Ver anuncio original →",
   "yummyNotAffiliated": "No estamos afiliados a Yummy.",
   "digitelTitle": "📱 Digitel · medidas de apoyo",
@@ -9,5 +15,14 @@
   "ingTitle": "🏗️ Ingeniería Solidaria · RedesAyuda",
   "ingBody": "Conecta a personas afectadas por el terremoto con ingenieros civiles voluntarios que ofrecen orientación y evaluaciones estructurales preliminares gratuitas. Busca un profesional por zona en su directorio —o regístrate si eres ingeniero—. Para emergencias críticas (colapso, incendio, heridos), llama primero a los servicios de emergencia.",
   "ingDirectory": "Ir al directorio ↗",
-  "ingNote": "Iniciativa de RedesAyuda · no estamos afiliados."
+  "ingNote": "Iniciativa de RedesAyuda · no estamos afiliados.",
+  "sismoTitle": "🏗️ SismoAyuda VE · evalúa tu vivienda",
+  "sismoBody": "Plataforma gratuita de ingeniería y arquitectura para evaluar la seguridad de tu vivienda tras el sismo. Si tu casa resultó dañada, completa el formulario y sube fotos o videos de los daños; recibirás por email un informe técnico con una valoración preliminar de la afectación. Sin registro y desde cualquier dispositivo. Las evaluaciones son orientaciones técnicas preliminares y no sustituyen la inspección oficial presencial.",
+  "sismoLink": "Evaluar mi vivienda ↗",
+  "sismoInspector": "¿Eres ingeniero/a o arquitecto/a? Regístrate como inspector ↗",
+  "sismoNote": "Iniciativa de terceros · no estamos afiliados.",
+  "cvcTitle": "🚜 CVC y Cámara Petrolera · operativo nacional de maquinaria",
+  "cvcBody": "La Cámara Venezolana de la Construcción (CVC) y la Cámara Petrolera de Venezuela (CPV) activan un plan de contingencia para centralizar y movilizar recursos técnicos y logísticos a nivel nacional, en coordinación con CAF (Banco de Desarrollo de América Latina y el Caribe) para el financiamiento. Hacen una convocatoria urgente para levantar un inventario nacional de maquinaria pesada y equipos: llaman a las empresas del sector con unidades medianas y pesadas, herramientas de remoción y voluntariado técnico profesional a incorporarse a las labores de remoción y bote de escombros, estabilización de terrenos y apertura de vías prioritarias en las zonas más afectadas.",
+  "cvcRegister": "Registrar empresa / maquinaria ↗",
+  "cvcNote": "Iniciativa de la CVC y la CPV · no estamos afiliados."
 }

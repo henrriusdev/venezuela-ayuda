@@ -1,6 +1,12 @@
 {
-  "yummyTitle": "💚 Yummy · support measures (today)",
-  "yummyBody": "Free rides to hospitals and clinics in Caracas, with no surge pricing for the rest of the day.",
+  "yummyTitle": "💚 Yummy · emergency help",
+  "yummyBody": "Yummy is putting its logistics network at the service of the emergency: mobilizing couriers, drivers and partner pharmacies to bring aid to the affected areas.",
+  "yummyItems": [
+    "Free emergency deliveries: water, food and medicine at no cost to shelters and isolated homes in the affected areas.",
+    "Yummy Rides solidarity: free rides to shelters, hospitals and family reunion points for those affected.",
+    "24h pharmacy: essential medicines coordinated with partner pharmacies and prioritized for immediate delivery.",
+    "Donations with YummyCredits: convert your balance or contribute directly; 100% becomes aid kits distributed by their network."
+  ],
   "yummyViewOriginal": "See original announcement →",
   "yummyNotAffiliated": "We are not affiliated with Yummy.",
   "digitelTitle": "📱 Digitel · support measures",
@@ -9,5 +15,14 @@
   "ingTitle": "🏗️ Solidarity Engineering · RedesAyuda",
   "ingBody": "Connects people affected by the earthquake with volunteer civil engineers who offer guidance and free preliminary structural assessments. Find a professional by area in their directory —or register if you're an engineer—. For critical emergencies (collapse, fire, injuries), call emergency services first.",
   "ingDirectory": "Go to the directory ↗",
-  "ingNote": "A RedesAyuda initiative · we are not affiliated."
+  "ingNote": "A RedesAyuda initiative · we are not affiliated.",
+  "sismoTitle": "🏗️ SismoAyuda VE · assess your home",
+  "sismoBody": "A free engineering and architecture platform to assess your home's safety after the earthquake. If your home was damaged, fill out the form and upload photos or videos of the damage; you'll receive a technical report by email with a preliminary assessment of the impact. No registration, from any device. The assessments are preliminary technical guidance and do not replace an official in-person inspection.",
+  "sismoLink": "Assess my home ↗",
+  "sismoInspector": "Are you an engineer or architect? Register as an inspector ↗",
+  "sismoNote": "A third-party initiative · we are not affiliated.",
+  "cvcTitle": "🚜 CVC & Petroleum Chamber · national machinery operation",
+  "cvcBody": "The Venezuelan Construction Chamber (CVC) and the Venezuelan Petroleum Chamber (CPV) are activating a contingency plan to centralize and mobilize technical and logistical resources nationwide, coordinating with CAF (Development Bank of Latin America and the Caribbean) for financing. They've issued an urgent call to build a national inventory of heavy machinery and equipment: companies in the sector with medium and heavy units, debris-removal tools and professional technical volunteers are asked to join the work of safe debris removal and disposal, ground stabilization and reopening priority roads in the worst-affected areas.",
+  "cvcRegister": "Register company / machinery ↗",
+  "cvcNote": "A CVC and CPV initiative · we are not affiliated."
 }

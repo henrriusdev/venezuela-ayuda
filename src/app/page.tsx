@@ -7,6 +7,8 @@ import EmergencyPhones from "@/components/EmergencyPhones";
 import SupportMeasures from "@/components/SupportMeasures";
 import DigitelMeasure from "@/components/DigitelMeasure";
 import IngenieriaSolidariaMeasure from "@/components/IngenieriaSolidariaMeasure";
+import SismoAyudaMeasure from "@/components/SismoAyudaMeasure";
+import CvcEmergenciaMeasure from "@/components/CvcEmergenciaMeasure";
 import SeismicAlerts from "@/components/SeismicAlerts";
 import { getStats, getMapMarkers } from "@/lib/data";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -133,6 +135,8 @@ export default async function Home() {
               <SupportMeasures />
               <DigitelMeasure />
               <IngenieriaSolidariaMeasure />
+              <SismoAyudaMeasure />
+              <CvcEmergenciaMeasure />
             </div>
           </section>
           <section aria-label={tAlerts("title")}>
@@ -172,12 +176,7 @@ export default async function Home() {
       </section>
 
       <footer className="mx-auto w-full max-w-5xl px-4 py-8 text-center text-sm text-[#8190a0]">
-        <div className="grid gap-4 text-left md:grid-cols-2">
-          <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
-            <p className="font-semibold text-[#14212e]">{t("footer.noAccountTitle")}</p>
-            <p className="mt-1">{t("footer.noAccountBody")}</p>
-          </div>
-
+        <div className="text-left">
           <div className="rounded-2xl border border-[#e6ecf2] bg-white p-5 text-[#5b6b7b]">
             <p className="font-semibold text-[#14212e]">{t("footer.contributeTitle")}</p>
             <p className="mt-1">
