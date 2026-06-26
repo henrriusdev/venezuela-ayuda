@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Design specs (local reference, not part of the app)
 /specs/
+
+# Local DB backups (contain PII — never commit)
+backups/

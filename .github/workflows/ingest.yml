@@ -2,10 +2,16 @@ name: Ingest external sources
 
 # Refreshes data from the sister sites + runs the fuzzy dedup cleanup.
 # Idempotent: only new/changed records are inserted.
+#
+# AUTO-SYNC PAUSED (2026-06-25): desaparecidosterremotovenezuela.com was
+# compromised and is mass-marking people as "found". The hourly schedule is
+# disabled to stop poisoned data from flowing in. To resume: uncomment the
+# `schedule` trigger below, run `gh workflow enable "Ingest external sources"`,
+# and make sure the ingest no longer trusts that source's found/localizado status.
 on:
-  schedule:
-    - cron: "0 * * * *" # hourly (GitHub may delay scheduled runs under load)
-  workflow_dispatch: {} # allow manual runs from the Actions tab
+  # schedule:
+  #   - cron: "0 * * * *" # hourly — PAUSED, see note above
+  workflow_dispatch: {} # manual runs only (Actions tab) while paused
 
 concurrency:
   group: ingest
