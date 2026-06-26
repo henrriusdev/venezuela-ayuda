@@ -310,17 +310,25 @@ function haversineKm(a: LatLng, b: LatLng): number {
 // ~75 m of an already-present damaged marker is assumed to be the same building
 // and dropped. Reuses haversineKm above.
 const DUP_RADIUS_KM = 0.075;
+
+// Kobo markers that are NOT within ~75 m of an existing damaged marker (i.e. not
+// the same building). Shared by the map merge and the stats count so both dedupe
+// identically.
+function dedupeKobo(kobo: MapMarker[], existingDamaged: MapMarker[]): MapMarker[] {
+  return kobo.filter(
+    (k) =>
+      !existingDamaged.some(
+        (d) =>
+          haversineKm({ lat: k.lat, lng: k.lng }, { lat: d.lat, lng: d.lng }) <=
+          DUP_RADIUS_KM,
+      ),
+  );
+}
+
 async function mergeKoboDamaged(markers: MapMarker[]): Promise<void> {
   const existing = markers.filter((m) => m.kind === "damaged");
   const kobo = await getKoboDamagedMarkers();
-  for (const k of kobo) {
-    const dup = existing.some(
-      (d) =>
-        haversineKm({ lat: k.lat, lng: k.lng }, { lat: d.lat, lng: d.lng }) <=
-        DUP_RADIUS_KM,
-    );
-    if (!dup) markers.push(k);
-  }
+  markers.push(...dedupeKobo(kobo, existing));
 }
 
 export type MatchedRequest = PublicHelpRequest & { distanceKm?: number };
@@ -550,7 +558,7 @@ async function getStatsUncached(): Promise<Stats> {
   if (!isSupabaseConfigured()) return ZERO_STATS;
   const supabase = getServerSupabase();
   const count = () => ({ count: "exact" as const, head: true });
-  const [safe, missing, found, requests, helpers, damaged, sheet, kobo] = await Promise.all([
+  const [safe, missing, found, requests, helpers, damaged, sheet, dbDamaged, kobo] = await Promise.all([
     supabase.from("public_checkins").select("id", count()).eq("status", "SAFE"),
     supabase
       .from("public_checkins")
@@ -567,18 +575,21 @@ async function getStatsUncached(): Promise<Stats> {
     supabase.from("public_damaged_reports").select("id", count()).neq("status", "RESOLVED"),
     // Curated spreadsheet damaged buildings (cached fetch — deduped with the map).
     getDamagedBuildingMarkers(),
-    // KoboToolbox damaged buildings (cached fetch). Counted raw here — the cheap
-    // COUNT(*) on the DB side has no coords to cross-dedup against, so this may
-    // slightly over-count for the headline stat.
+    // DB damaged markers (coords) — used only to dedupe Kobo against, same as the map.
+    getDamagedReportMarkers(),
+    // KoboToolbox damaged buildings (cached fetch).
     getKoboDamagedMarkers(),
   ]);
+  // Count only Kobo buildings that aren't already in the sheet or DB (geo-dedupe,
+  // identical to the map) so the headline stat doesn't double-count.
+  const koboNew = dedupeKobo(kobo, [...sheet, ...dbDamaged]);
   return {
     safe: safe.count ?? 0,
     missing: missing.count ?? 0,
     found: found.count ?? 0,
     requests: requests.count ?? 0,
     helpers: helpers.count ?? 0,
-    damaged: (damaged.count ?? 0) + sheet.length + kobo.length,
+    damaged: (damaged.count ?? 0) + sheet.length + koboNew.length,
   };
 }
 
