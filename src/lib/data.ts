@@ -78,7 +78,15 @@ export async function getAbroadCenters(): Promise<HelpCity[]> {
       description: c.description ?? undefined,
       address: c.address ?? "",
       website: c.website ?? undefined,
-      phone: c.contact ?? undefined,
+      phone: c.contact ?? undefined, // org contact (public for centers), never a person
+      resources: c.resources ?? undefined,
+      canShip: c.can_ship_to_venezuela ?? undefined,
+      needsVolunteers: c.needs_volunteers ?? undefined,
+      volunteersCount: c.volunteers_count ?? undefined,
+      mapsQuery:
+        c.latitude != null && c.longitude != null
+          ? `${c.latitude},${c.longitude}`
+          : [c.address, c.city, c.country].filter(Boolean).join(", ") || undefined,
       needs: (c.needs as HelpNeed[]) ?? [],
     });
   }
