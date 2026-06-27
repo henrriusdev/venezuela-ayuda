@@ -54,6 +54,7 @@ export default function DamagedAdminRow({ item }: { item: AdminDamagedRow }) {
       <p className="mt-1 text-xs text-[#8190a0]">
         {item.city ? `${item.city} · ` : ""}
         {timeAgo(item.created_at)}
+        {` · ${item.source ? `Fuente: ${item.source}` : "Desde el sitio"}`}
       </p>
 
       {item.description && (
@@ -62,20 +63,32 @@ export default function DamagedAdminRow({ item }: { item: AdminDamagedRow }) {
         </p>
       )}
 
-      {(item.verified_at || item.hidden) && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {item.verified_at && (
-            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-              ✅ Verificado
-            </span>
-          )}
-          {item.hidden && (
-            <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-              Oculto
-            </span>
-          )}
-        </div>
-      )}
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        {item.verified_at ? (
+          <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+            ✅ Verificado
+          </span>
+        ) : (
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+            ⏳ Sin verificar
+          </span>
+        )}
+        {item.risk_level && (
+          <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+            Riesgo: {item.risk_level}
+          </span>
+        )}
+        {item.status && item.status !== "OPEN" && (
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+            {item.status}
+          </span>
+        )}
+        {item.hidden && (
+          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+            Oculto
+          </span>
+        )}
+      </div>
 
       <div className="mt-3.5 flex flex-wrap gap-2">
         <button
