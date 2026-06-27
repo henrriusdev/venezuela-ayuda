@@ -385,8 +385,10 @@ export async function getMatchingRequests(params: {
     .limit(params.limit ?? 150);
   if (params.status === "OPEN" || params.status === "IN_PROGRESS")
     query = query.eq("status", params.status);
-  if (params.categories && params.categories.length)
-    query = query.in("category", params.categories);
+  if (params.categories && params.categories.length) {
+    const categories = params.categories.filter((c): c is HelpCategory => c in HELP_CATEGORIES);
+    if (categories.length) query = query.in("category", categories);
+  }
   if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
 
   const { data, error } = await query;
