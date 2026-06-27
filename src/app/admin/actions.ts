@@ -4,9 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAuthClient } from "@/lib/supabase/auth";
 import { getServerSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
-import { getAdminEmail, isEmailAdmin } from "@/lib/admin";
+import { getAdminEmail, isEmailAdmin, isSuperAdmin } from "@/lib/admin";
 import { generateApiKey, hashKey, parsePrefix } from "@/lib/apiAuth.mjs";
 import { patchArgs, deleteArgs } from "@/lib/internalWrite.mjs";
+import { buildRow, INGEST_TABLES } from "@/lib/ingest.mjs";
+import { parseDump } from "@/lib/batchIngest.mjs";
+import { VA_PARTNER_ID } from "@/lib/canonical.mjs";
 
 export type AuthState = { error?: string };
 type Result = { ok: boolean; error?: string };
@@ -78,6 +81,14 @@ export async function adminSignOut() {
 async function requireAdmin(): Promise<string> {
   const email = await getAdminEmail();
   if (!email) throw new Error("No autorizado");
+  return email;
+}
+
+// Stricter gate for privileged actions: managing admins, issuing API keys, and
+// batch ingest. Throws unless the caller is a super-admin.
+async function requireSuperAdmin(): Promise<string> {
+  const email = await getAdminEmail();
+  if (!email || !(await isSuperAdmin(email))) throw new Error("No autorizado");
   return email;
 }
 
@@ -239,7 +250,7 @@ export async function updateCenter(
 export async function addAdmin(email: string): Promise<Result> {
   let me: string;
   try {
-    me = await requireAdmin();
+    me = await requireSuperAdmin();
   } catch {
     return { ok: false, error: "No autorizado." };
   }
@@ -258,7 +269,7 @@ export async function addAdmin(email: string): Promise<Result> {
 export async function removeAdmin(email: string): Promise<Result> {
   let me: string;
   try {
-    me = await requireAdmin();
+    me = await requireSuperAdmin();
   } catch {
     return { ok: false, error: "No autorizado." };
   }
@@ -267,6 +278,28 @@ export async function removeAdmin(email: string): Promise<Result> {
   const svc = getServerSupabase();
   const { error } = await svc.from("admin_emails").delete().eq("email", clean);
   if (error) return { ok: false, error: "No se pudo quitar." };
+  revalidatePath("/admin/admins");
+  return { ok: true };
+}
+
+// Promote/demote another admin to super-admin. Super-admin only; can't demote
+// yourself (avoids locking out the last super-admin by accident).
+export async function setSuperAdmin(email: string, value: boolean): Promise<Result> {
+  let me: string;
+  try {
+    me = await requireSuperAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  const clean = email.trim().toLowerCase();
+  if (clean === me && !value)
+    return { ok: false, error: "No puedes quitarte el rol de super-admin a ti mismo." };
+  const svc = getServerSupabase();
+  const { error } = await svc
+    .from("admin_emails")
+    .update({ is_super_admin: value })
+    .eq("email", clean);
+  if (error) return { ok: false, error: "No se pudo actualizar el rol." };
   revalidatePath("/admin/admins");
   return { ok: true };
 }
@@ -283,7 +316,7 @@ export async function createPartner(input: {
   contact?: string;
 }): Promise<PartnerResult> {
   try {
-    await requireAdmin();
+    await requireSuperAdmin();
   } catch {
     return { ok: false, error: "No autorizado." };
   }
@@ -317,9 +350,100 @@ export async function createPartner(input: {
   return { ok: true, key, id: data.id }; // key visible una sola vez; id no es secreto
 }
 
+// --- Batch ingest (super-admin) ----------------------------------------------
+// Ingest an external data dump (JSON / CSV / SQL INSERT statements). The dump is
+// PARSED into canonical reports (never executed), validated by buildRow, and
+// upserted through the SAME audited RPC as the public API. Rows are stamped with
+// `source` (idempotent on (source, external_id)); audit is attributed to the hub.
+const MAX_BATCH_ROWS = 2000;
+
+type BatchResult = Result & {
+  accepted?: number;
+  rejected?: number;
+  errored?: number;
+  sample?: Array<{ external_id: string | null; status: string; error?: string }>;
+};
+
+export async function ingestBatch(input: {
+  text: string;
+  format?: "auto" | "json" | "csv" | "sql";
+  source: string;
+}): Promise<BatchResult> {
+  try {
+    await requireSuperAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  const source = String(input.source || "").trim().toLowerCase();
+  if (!SOURCE_RE.test(source))
+    return { ok: false, error: "Source inválido (ej: cruzroja-dump)." };
+
+  let reports: unknown[];
+  try {
+    reports = parseDump(String(input.text || ""), input.format ?? "auto");
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo leer el dump." };
+  }
+  if (!reports.length) return { ok: false, error: "El dump no contiene filas." };
+  if (reports.length > MAX_BATCH_ROWS)
+    return { ok: false, error: `Máximo ${MAX_BATCH_ROWS} filas por carga (recibidas ${reports.length}).` };
+
+  // Validate + route + dedup intra-batch by external_id (same as /api/v1/reports).
+  const results: Array<{ external_id: string | null; status: string; error?: string }> = [];
+  const byTable: Record<string, Map<string, Record<string, unknown>>> = {};
+  for (const rep of reports) {
+    const built = buildRow(rep, source) as
+      | { ok: true; table: string; row: Record<string, unknown> }
+      | { ok: false; error: string };
+    const extId = (rep as { external_id?: string })?.external_id ?? null;
+    if (!built.ok) { results.push({ external_id: extId, status: "rejected", error: built.error }); continue; }
+    (byTable[built.table] ??= new Map()).set(built.row.external_id as string, built.row);
+  }
+
+  const svc = getServerSupabase();
+  const tables = (INGEST_TABLES as string[]).filter((t) => byTable[t]?.size);
+  const outcomes = await Promise.allSettled(
+    tables.map((t) =>
+      svc.rpc("ingest_reports", {
+        p_table: t,
+        p_rows: [...byTable[t].values()],
+        p_partner: VA_PARTNER_ID,
+        p_source: source,
+        p_request_id: null,
+        p_ip: null,
+        p_user_agent: null,
+      }),
+    ),
+  );
+
+  let accepted = 0;
+  tables.forEach((t, i) => {
+    const rows = [...byTable[t].values()];
+    const o = outcomes[i];
+    const failed = o.status === "rejected" || o.value.error;
+    if (failed) {
+      for (const row of rows)
+        results.push({ external_id: (row.external_id as string) ?? null, status: "error", error: "Error de base de datos." });
+    } else {
+      accepted += rows.length;
+      for (const row of rows)
+        results.push({ external_id: (row.external_id as string) ?? null, status: "upserted" });
+    }
+  });
+
+  const rejected = results.filter((r) => r.status === "rejected").length;
+  const errored = results.filter((r) => r.status === "error").length;
+  revalidatePath("/admin/ingesta");
+  return {
+    ok: accepted > 0 || (rejected === 0 && errored === 0),
+    accepted, rejected, errored,
+    sample: results.filter((r) => r.status !== "upserted").slice(0, 20),
+  };
+}
+
 export async function revokePartner(id: string): Promise<Result> {
   try {
-    await requireAdmin();
+    await requireSuperAdmin();
   } catch {
     return { ok: false, error: "No autorizado." };
   }

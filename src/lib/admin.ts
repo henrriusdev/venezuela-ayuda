@@ -25,9 +25,30 @@ export async function isEmailAdmin(email: string): Promise<boolean> {
   return Boolean(data);
 }
 
+// True only for super-admins (admin_emails.is_super_admin). Super-admins can
+// create/remove admins, issue API keys, and run the batch ingest.
+export async function isSuperAdmin(email: string): Promise<boolean> {
+  const svc = getServerSupabase();
+  const { data } = await svc
+    .from("admin_emails")
+    .select("is_super_admin")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+  return Boolean(data?.is_super_admin);
+}
+
+// One round-trip for the logged-in admin's identity + tier. Returns null if not
+// authenticated or not on the allowlist.
+export async function getAdminSession(): Promise<{ email: string; isSuper: boolean } | null> {
+  const email = await getAdminEmail();
+  if (!email) return null;
+  return { email, isSuper: await isSuperAdmin(email) };
+}
+
 export interface AdminRow {
   email: string;
   added_by: string | null;
+  is_super_admin: boolean;
   created_at: string;
 }
 
@@ -35,7 +56,8 @@ export async function listAdmins(): Promise<AdminRow[]> {
   const svc = getServerSupabase();
   const { data } = await svc
     .from("admin_emails")
-    .select("*")
+    .select("email,added_by,is_super_admin,created_at")
+    .order("is_super_admin", { ascending: false })
     .order("created_at", { ascending: true });
   return (data ?? []) as AdminRow[];
 }
