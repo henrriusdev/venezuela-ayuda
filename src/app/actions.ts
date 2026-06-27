@@ -26,6 +26,7 @@ import { computeRisk, type RiskAnswers } from "@/lib/risk";
 import { VA_SOURCE } from "@/lib/canonical.mjs";
 import { ingestArgs, patchArgs, buildCenterRow } from "@/lib/internalWrite.mjs";
 import { frIndexPerson } from "@/lib/fr";
+import { logError, logWarn } from "@/lib/log.mjs";
 import type { Sighting, RequestResponse } from "@/lib/types";
 
 export type ActionState = {
@@ -72,9 +73,13 @@ async function uploadCheckinPhoto(
     const { error } = await supabase.storage
       .from("checkin-photos")
       .upload(path, clean, { contentType, upsert: true });
-    if (error) return null;
+    if (error) {
+      logWarn("photo_upload_failed", { scope: "actions.uploadCheckinPhoto" }, error);
+      return null;
+    }
     return supabase.storage.from("checkin-photos").getPublicUrl(path).data.publicUrl ?? null;
-  } catch {
+  } catch (err) {
+    logWarn("photo_upload_failed", { scope: "actions.uploadCheckinPhoto" }, err);
     return null;
   }
 }
@@ -152,7 +157,8 @@ export async function submitCheckin(
           null,
       });
     }
-  } catch {
+  } catch (err) {
+    logError("checkin_submit_failed", err, { scope: "actions.submitCheckin" });
     return {
       ok: false,
       error: "No pudimos guardar tu información. Revisa tu conexión e intenta de nuevo.",
@@ -215,7 +221,8 @@ export async function submitHelpRequest(
       ])
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("help_request_submit_failed", err, { scope: "actions.submitHelpRequest" });
     return {
       ok: false,
       error: "No pudimos enviar tu solicitud. Revisa tu conexión e intenta de nuevo.",
@@ -297,7 +304,8 @@ export async function submitDamagedReport(
       ])
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("damaged_report_submit_failed", err, { scope: "actions.submitDamagedReport" });
     return {
       ok: false,
       error: "No pudimos enviar el reporte. Revisa tu conexión e intenta de nuevo.",
@@ -346,7 +354,8 @@ export async function submitHelpOffer(
       ])
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("help_offer_submit_failed", err, { scope: "actions.submitHelpOffer" });
     return {
       ok: false,
       error: "No pudimos enviar tu oferta. Revisa tu conexión e intenta de nuevo.",
@@ -377,7 +386,11 @@ async function verifyManageToken(
     .select("manage_token")
     .eq("id", id)
     .maybeSingle();
-  if (error || !data) return false;
+  if (error) {
+    logWarn("manage_token_read_failed", { scope: "actions.verifyManageToken", table }, error);
+    return false;
+  }
+  if (!data) return false;
   return data.manage_token != null && data.manage_token === token;
 }
 
@@ -405,7 +418,8 @@ export async function markCheckinFound(
       })
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("checkin_mark_found_failed", err, { scope: "actions.markCheckinFound" });
     return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
   }
   revalidatePath("/mapa");
@@ -433,7 +447,8 @@ export async function resolveHelpRequest(
       patchArgs("help_requests", id, { status: resolved ? "RESOLVED" : "OPEN" })
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("help_request_resolve_failed", err, { scope: "actions.resolveHelpRequest" });
     return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
   }
   revalidatePath("/mapa");
@@ -461,7 +476,8 @@ export async function resolveDamagedReport(
       patchArgs("damaged_reports", id, { status: resolved ? "RESOLVED" : "OPEN" })
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("damaged_report_resolve_failed", err, { scope: "actions.resolveDamagedReport" });
     return { ok: false, error: "No se pudo actualizar. Intenta de nuevo." };
   }
   revalidatePath("/mapa");
@@ -495,11 +511,12 @@ export async function submitSighting(
     const supabase = getServerSupabase();
     // Relays only apply to reports created on this site (which have a manage
     // token). External reports point people to the original source instead.
-    const { data: c } = await supabase
+    const { data: c, error: cErr } = await supabase
       .from("checkins")
       .select("status, found_at, source")
       .eq("id", checkinId)
       .maybeSingle();
+    if (cErr) logWarn("sighting_probe_failed", { scope: "actions.submitSighting" }, cErr);
     if (!c || c.status !== "LOOKING_FOR_SOMEONE" || c.found_at || c.source)
       return { ok: false, error: "Este reporte no acepta avisos." };
 
@@ -510,7 +527,8 @@ export async function submitSighting(
       message: msg || null,
     });
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("sighting_submit_failed", err, { scope: "actions.submitSighting" });
     return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
   }
   return { ok: true };
@@ -525,11 +543,12 @@ export async function fetchSightings(
   if (!(await verifyManageToken("checkins", checkinId, token)))
     return { ok: false, error: "No autorizado." };
   const supabase = getServerSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("sightings")
     .select("id, finder_name, finder_contact, message, created_at")
     .eq("checkin_id", checkinId)
     .order("created_at", { ascending: false });
+  if (error) logWarn("sightings_read_failed", { scope: "actions.fetchSightings" }, error);
   return { ok: true, sightings: (data ?? []) as Sighting[] };
 }
 
@@ -558,11 +577,12 @@ export async function respondToRequest(
     const supabase = getServerSupabase();
     // Relays only apply to requests created on this site (which have a manage
     // token). External/ingested requests point people to the original source.
-    const { data: r } = await supabase
+    const { data: r, error: rErr } = await supabase
       .from("help_requests")
       .select("status, source")
       .eq("id", requestId)
       .maybeSingle();
+    if (rErr) logWarn("response_probe_failed", { scope: "actions.respondToRequest" }, rErr);
     if (!r || r.status === "RESOLVED" || r.source)
       return { ok: false, error: "Esta solicitud no acepta respuestas." };
 
@@ -573,7 +593,8 @@ export async function respondToRequest(
       message: msg || null,
     });
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("response_submit_failed", err, { scope: "actions.respondToRequest" });
     return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
   }
   return { ok: true };
@@ -588,11 +609,12 @@ export async function fetchRequestResponses(
   if (!(await verifyManageToken("help_requests", requestId, token)))
     return { ok: false, error: "No autorizado." };
   const supabase = getServerSupabase();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("request_responses")
     .select("id, responder_name, responder_contact, message, created_at")
     .eq("request_id", requestId)
     .order("created_at", { ascending: false });
+  if (error) logWarn("responses_read_failed", { scope: "actions.fetchRequestResponses" }, error);
   return { ok: true, responses: (data ?? []) as RequestResponse[] };
 }
 
@@ -653,7 +675,8 @@ export async function submitCollectionCenter(
       ])
     );
     if (error) throw error;
-  } catch {
+  } catch (err) {
+    logError("collection_center_submit_failed", err, { scope: "actions.submitCollectionCenter" });
     return {
       ok: false,
       error: "No pudimos enviar el centro. Revisa tu conexión e intenta de nuevo.",

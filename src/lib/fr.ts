@@ -1,4 +1,5 @@
 import "server-only";
+import { logWarn } from "@/lib/log.mjs";
 
 // Integración con el FR-API (reconocimiento facial asistivo para reunificación).
 // La clave vive SOLO en el servidor; el navegador nunca la ve. Todo es asistivo:
@@ -38,16 +39,21 @@ export async function frIndexPerson(p: {
     fd.append("source", FR_SOURCE);
     if (p.name) fd.append("person_name", p.name);
     if (p.location) fd.append("last_seen_location", p.location);
-    await fetch(`${FR_BASE}/v1/index`, {
+    const res = await fetch(`${FR_BASE}/v1/index`, {
       method: "POST",
       headers: frHeaders(),
       body: fd,
       signal: ctrl.signal,
     });
+    // fetch NO lanza en 401/500: un FR caído o una key inválida devuelve un
+    // res no-ok que, sin este chequeo, dejaría la persona sin indexar en silencio.
+    if (!res.ok) {
+      logWarn("fr_index_failed", { scope: "data.frIndexPerson", status: res.status });
+    }
   } catch (err) {
-    // Asistivo: nunca bloquea el registro. Pero SÍ dejamos rastro: si la key del
-    // FR está mal (401), sin este log los registros no se indexan en silencio.
-    console.warn(`[FR] /v1/index falló para external_id=${p.externalId} (¿FR_API_KEY de 48 chars? ¿FR_API_URL?). Persona NO indexada.`, err)
+    // Asistivo: nunca bloquea el registro. Pero SÍ dejamos rastro (timeout/abort
+    // o error de red): sin este log los registros no se indexan en silencio.
+    logWarn("fr_index_failed", { scope: "data.frIndexPerson" }, err);
   } finally {
     clearTimeout(timer);
   }

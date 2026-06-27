@@ -18,6 +18,7 @@ import {
   SERVICE_UNAVAILABLE_MESSAGE,
 } from "@/lib/apiPolicy.mjs";
 import type { Json } from "@/types/database.types.gen";
+import { logError, logDebug } from "@/lib/log.mjs";
 
 // Recurso único `reports` del hub central (v1).
 //
@@ -95,6 +96,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await query;
   if (error) {
+    logError("reports_read_failed", error, { scope: "api.reports.GET", view: resolved.view });
     return NextResponse.json({ error: SERVICE_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
@@ -126,7 +128,8 @@ export async function POST(req: Request) {
   let partner: { partnerId: string; source: string; scopes: string[] } | null;
   try {
     partner = await authenticatePartner(req.headers.get("x-api-key"));
-  } catch {
+  } catch (err) {
+    logError("partner_auth_failed", err, { scope: "api.reports.POST", request_id: requestId });
     return NextResponse.json(errorBody(SERVICE_UNAVAILABLE_MESSAGE, requestId), { status: 503, headers: rid });
   }
   if (!partner) {
@@ -162,7 +165,11 @@ export async function POST(req: Request) {
   let reports: unknown;
   try {
     reports = ((await req.json()) as { reports?: unknown })?.reports;
-  } catch {
+  } catch (err) {
+    // Body malformado = error del cliente (400, no silencioso). Sólo en debug
+    // para no dar amplificación de logs a requests basura.
+    logDebug("reports_bad_json", { scope: "api.reports.POST", request_id: requestId });
+    void err;
     return NextResponse.json(errorBody("Cuerpo JSON inválido.", requestId), { status: 400, headers: rid });
   }
   if (!Array.isArray(reports)) {
@@ -215,13 +222,21 @@ export async function POST(req: Request) {
     const outcome = outcomes[i];
     // Error de DB → mensaje GENÉRICO. El texto crudo de Postgres (constraint,
     // SQLSTATE, fragmentos de query) jamás llega al cliente (safeDbError).
-    const dbError =
+    const rawDbError =
       outcome.status === "rejected"
-        ? safeDbError(outcome.reason)
+        ? outcome.reason
         : outcome.value.error
-          ? safeDbError(outcome.value.error)
+          ? outcome.value.error
           : null;
+    const dbError = rawDbError ? safeDbError(rawDbError) : null;
     if (dbError) {
+      // El cliente sólo ve el mensaje genérico (safeDbError); el crudo va al log
+      // server-side para que un fallo de escritura sea visible al operador.
+      logError("reports_write_failed", rawDbError, {
+        scope: "api.reports.POST",
+        request_id: requestId,
+        table: t,
+      });
       dbErrors++;
       for (const row of rows) results.push({ external_id: (row.external_id as string) ?? null, status: "error", error: dbError });
     } else {

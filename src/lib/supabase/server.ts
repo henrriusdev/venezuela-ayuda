@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types.gen";
+import { logError, logWarn } from "@/lib/log.mjs";
 
 // Server-only Supabase client.
 //
@@ -29,8 +30,23 @@ export function hasSecretKey(): boolean {
   return Boolean(secretKey);
 }
 
+// Una sola vez por proceso: si Supabase no está configurado, el app degrada en
+// silencio (reads → [], actions → notConfigured). Lo hacemos visible UNA vez —
+// `isSupabaseConfigured` se llama en casi cada read/action, así que loguear por
+// llamada inundaría los logs. En producción esto es un incidente real (falta
+// env) → error; en dev es modo degradado esperado → warn informativo.
+let warnedUnconfigured = false;
+
 export function isSupabaseConfigured(): boolean {
-  return Boolean(url && (secretKey || publicKey));
+  const configured = Boolean(url && (secretKey || publicKey));
+  if (!configured && !warnedUnconfigured) {
+    warnedUnconfigured = true;
+    const ctx = { scope: "supabase.server", env: process.env.NODE_ENV };
+    if (process.env.NODE_ENV === "production")
+      logError("supabase_not_configured", new Error("Supabase env vars missing"), ctx);
+    else logWarn("supabase_not_configured", ctx);
+  }
+  return configured;
 }
 
 export function getServerSupabase(): SupabaseClient<Database> {

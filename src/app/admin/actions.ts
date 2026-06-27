@@ -12,6 +12,7 @@ import { buildRow, INGEST_TABLES } from "@/lib/ingest.mjs";
 import { parseDump } from "@/lib/batchIngest.mjs";
 import { VA_PARTNER_ID } from "@/lib/canonical.mjs";
 import type { Json } from "@/types/database.types.gen";
+import { logError, logWarn } from "@/lib/log.mjs";
 
 export type AuthState = { error?: string };
 type Result = { ok: boolean; error?: string };
@@ -92,17 +93,24 @@ export async function adminSignUp(_prev: AuthState, form: FormData): Promise<Aut
     password,
     email_confirm: true,
   });
-  if (createErr && !/already|registered|exists/i.test(createErr.message))
+  if (createErr && !/already|registered|exists/i.test(createErr.message)) {
+    logWarn("admin_signup_create_failed", { scope: "admin.adminSignUp" }, createErr);
     return { error: GENERIC };
+  }
 
   const auth = await getAuthClient();
   const { error: signErr } = await auth.auth.signInWithPassword({ email, password });
-  if (signErr)
+  if (signErr) {
+    // `createErr` ⇒ la cuenta ya existía y la contraseña dada no coincide: flujo
+    // esperado, no se loguea. Sólo el caso inesperado (creamos la cuenta recién y
+    // aun así el sign-in falla) deja rastro.
+    if (!createErr) logError("admin_signup_signin_failed", signErr, { scope: "admin.adminSignUp" });
     return {
       error: createErr
         ? "Ese correo ya tiene una cuenta. Usa Iniciar sesión."
         : GENERIC,
     };
+  }
   await svc.rpc("login_clear", { p_key: key });
   redirect("/admin");
 }
@@ -144,7 +152,10 @@ export async function verifyDamagedReport(id: string, verified: boolean): Promis
       verified_by: verified ? email : null,
     })
   );
-  if (error) return { ok: false, error: "No se pudo actualizar." };
+  if (error) {
+    logError("admin_verify_damaged_failed", error, { scope: "admin.verifyDamagedReport" });
+    return { ok: false, error: "No se pudo actualizar." };
+  }
   revalidatePath("/mapa");
   revalidatePath(`/edificio/${id}`);
   revalidatePath("/admin");
@@ -184,7 +195,10 @@ export async function updateDamagedReport(
 
   const svc = getServerSupabase();
   const { error } = await svc.rpc("patch_report", patchArgs("damaged_reports", id, update));
-  if (error) return { ok: false, error: "No se pudo guardar." };
+  if (error) {
+    logError("admin_update_damaged_failed", error, { scope: "admin.updateDamagedReport" });
+    return { ok: false, error: "No se pudo guardar." };
+  }
   revalidatePath("/mapa");
   revalidatePath(`/edificio/${id}`);
   revalidatePath("/admin");
@@ -201,7 +215,10 @@ export async function setHidden(table: string, id: string, hidden: boolean): Pro
     return { ok: false, error: "Solicitud inválida." };
   const svc = getServerSupabase();
   const { error } = await svc.rpc("patch_report", patchArgs(table, id, { hidden }));
-  if (error) return { ok: false, error: "No se pudo actualizar." };
+  if (error) {
+    logError("admin_set_hidden_failed", error, { scope: "admin.setHidden", table });
+    return { ok: false, error: "No se pudo actualizar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/buscar");
   revalidatePath("/admin");
@@ -218,7 +235,10 @@ export async function deleteReport(table: string, id: string): Promise<Result> {
     return { ok: false, error: "Solicitud inválida." };
   const svc = getServerSupabase();
   const { error } = await svc.rpc("delete_report", deleteArgs(table, id));
-  if (error) return { ok: false, error: "No se pudo eliminar." };
+  if (error) {
+    logError("admin_delete_report_failed", error, { scope: "admin.deleteReport", table });
+    return { ok: false, error: "No se pudo eliminar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/buscar");
   revalidatePath("/admin");
@@ -235,7 +255,10 @@ export async function verifyCenter(id: string, verified: boolean): Promise<Resul
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
   const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, { verified }));
-  if (error) return { ok: false, error: "No se pudo actualizar." };
+  if (error) {
+    logError("admin_verify_center_failed", error, { scope: "admin.verifyCenter" });
+    return { ok: false, error: "No se pudo actualizar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
   revalidatePath("/admin");
@@ -251,7 +274,10 @@ export async function setCenterHidden(id: string, hidden: boolean): Promise<Resu
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
   const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, { hidden }));
-  if (error) return { ok: false, error: "No se pudo actualizar." };
+  if (error) {
+    logError("admin_set_center_hidden_failed", error, { scope: "admin.setCenterHidden" });
+    return { ok: false, error: "No se pudo actualizar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
   revalidatePath("/admin");
@@ -267,7 +293,10 @@ export async function deleteCenter(id: string): Promise<Result> {
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
   const { error } = await svc.rpc("delete_report", deleteArgs("collection_centers", id));
-  if (error) return { ok: false, error: "No se pudo eliminar." };
+  if (error) {
+    logError("admin_delete_center_failed", error, { scope: "admin.deleteCenter" });
+    return { ok: false, error: "No se pudo eliminar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
   revalidatePath("/admin");
@@ -315,7 +344,10 @@ export async function updateCenter(
 
   const svc = getServerSupabase();
   const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, update));
-  if (error) return { ok: false, error: "No se pudo guardar." };
+  if (error) {
+    logError("admin_update_center_failed", error, { scope: "admin.updateCenter" });
+    return { ok: false, error: "No se pudo guardar." };
+  }
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
   revalidatePath("/admin");
@@ -337,7 +369,10 @@ export async function addAdmin(email: string): Promise<Result> {
   const { error } = await svc
     .from("admin_emails")
     .upsert({ email: clean, added_by: me }, { onConflict: "email" });
-  if (error) return { ok: false, error: "No se pudo agregar." };
+  if (error) {
+    logError("admin_add_failed", error, { scope: "admin.addAdmin" });
+    return { ok: false, error: "No se pudo agregar." };
+  }
   revalidatePath("/admin/admins");
   return { ok: true };
 }
@@ -353,7 +388,10 @@ export async function removeAdmin(email: string): Promise<Result> {
   if (clean === me) return { ok: false, error: "No puedes quitarte a ti mismo." };
   const svc = getServerSupabase();
   const { error } = await svc.from("admin_emails").delete().eq("email", clean);
-  if (error) return { ok: false, error: "No se pudo quitar." };
+  if (error) {
+    logError("admin_remove_failed", error, { scope: "admin.removeAdmin" });
+    return { ok: false, error: "No se pudo quitar." };
+  }
   revalidatePath("/admin/admins");
   return { ok: true };
 }
@@ -375,7 +413,10 @@ export async function setSuperAdmin(email: string, value: boolean): Promise<Resu
     .from("admin_emails")
     .update({ is_super_admin: value })
     .eq("email", clean);
-  if (error) return { ok: false, error: "No se pudo actualizar el rol." };
+  if (error) {
+    logError("admin_set_super_failed", error, { scope: "admin.setSuperAdmin" });
+    return { ok: false, error: "No se pudo actualizar el rol." };
+  }
   revalidatePath("/admin/admins");
   return { ok: true };
 }
@@ -420,6 +461,7 @@ export async function createPartner(input: {
   if (error) {
     if (/duplicate|unique/i.test(error.message))
       return { ok: false, error: "Ya existe un colaborador con ese source." };
+    logError("admin_create_partner_failed", error, { scope: "admin.createPartner" });
     return { ok: false, error: "No se pudo crear el colaborador." };
   }
   revalidatePath("/admin/colaboradores");
@@ -496,8 +538,9 @@ export async function ingestBatch(input: {
   tables.forEach((t, i) => {
     const rows = [...byTable[t].values()];
     const o = outcomes[i];
-    const failed = o.status === "rejected" || o.value.error;
-    if (failed) {
+    const dbErr = o.status === "rejected" ? o.reason : o.value.error;
+    if (dbErr) {
+      logError("admin_batch_ingest_failed", dbErr, { scope: "admin.ingestBatch", table: t, source });
       for (const row of rows)
         results.push({ external_id: (row.external_id as string) ?? null, status: "error", error: "Error de base de datos." });
     } else {
@@ -529,7 +572,10 @@ export async function revokePartner(id: string): Promise<Result> {
     .from("api_partners")
     .update({ active: false, revoked_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) return { ok: false, error: "No se pudo revocar." };
+  if (error) {
+    logError("admin_revoke_partner_failed", error, { scope: "admin.revokePartner" });
+    return { ok: false, error: "No se pudo revocar." };
+  }
   revalidatePath("/admin/colaboradores");
   return { ok: true };
 }
