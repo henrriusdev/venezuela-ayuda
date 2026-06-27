@@ -61,21 +61,40 @@ gh label create "status:blocked"      --repo $REPO --color b60205 --description 
 gh label create "security" --repo $REPO --color b60205 --description "Seguridad / privacidad" --force
 ```
 
+## ⚠️ Antes de empezar: reclamar el issue
+
+**Regla obligatoria: nadie empieza a trabajar en un issue sin haberlo reclamado primero.**
+
+Pasos:
+1. Comenta en el issue que lo estás tomando (`"Lo tomo, empiezo hoy"`).
+2. Asígnate el issue (botón **Assignees** en la barra lateral de GitHub).
+3. Cambia el label a **`status:in-progress`**.
+
+Solo entonces abre tu rama y empieza a programar.
+
+**¿Por qué?** Sin este paso, dos colaboradores pueden trabajar en paralelo sobre el mismo
+issue sin saberlo, generando conflictos, trabajo duplicado y PRs que se pisan entre sí.
+Este problema ocurrió en la práctica (issue #51) — de ahí esta regla.
+
+> Ver también [CONTRIBUTING.md](../../CONTRIBUTING.md) §"Punto de entrada: empieza por los
+> issues" para el flujo completo desde cero.
+
+---
+
 ## Ciclo de vida de un issue
 
 ```
 abierto (status:needs-triage)
    │  ── triage: tipo + area:* + priority:* ──▶  status:triaged
    │                                                │
-   │                          alguien lo toma ──▶  status:in-progress  ── PR ──▶  cerrado
+   │       reclamar (comentar + asignarse) ──▶  status:in-progress  ── PR ──▶  cerrado
    │                                                │
    │                          falta dependencia ──▶ status:blocked
    └─ inválido/duplicado ──▶ cerrado (invalid/duplicate)
 ```
 
 - **PRs cierran issues** con `Closes #N` en la descripción.
-- Comenta en el issue **antes** de empezar a trabajarlo (evita trabajo duplicado) y pásalo a
-  `status:in-progress` (o autoasígnate).
+- Reclamar el issue **antes** de empezar (ver sección de arriba) evita trabajo duplicado.
 
 ## Triage
 
