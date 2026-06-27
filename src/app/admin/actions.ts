@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAuthClient } from "@/lib/supabase/auth";
 import { getServerSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getAdminEmail, isEmailAdmin, isSuperAdmin } from "@/lib/admin";
+import { clientKey } from "@/lib/rateLimit";
 import { generateApiKey, hashKey, parsePrefix } from "@/lib/apiAuth.mjs";
 import { patchArgs, deleteArgs } from "@/lib/internalWrite.mjs";
 import { buildRow, INGEST_TABLES } from "@/lib/ingest.mjs";
@@ -18,8 +19,17 @@ type PartnerResult = Result & { key?: string; id?: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MODERATABLE = new Set(["checkins", "help_requests", "help_offers", "damaged_reports"]);
 
+// Throttle durable del login (RPC 0021): hasta 8 intentos fallidos por IP en 15
+// min; al superarlo, bloqueo de 15 min. Compartido entre instancias serverless.
+const LOGIN_LIMIT = { p_limit: 8, p_window_sec: 900, p_lockout_sec: 900 } as const;
+const MIN_PASSWORD = 12;
+
 function emailOf(form: FormData) {
   return String(form.get("email") || "").trim().toLowerCase();
+}
+
+function lockedMsg(seconds: number) {
+  return `Demasiados intentos fallidos. Intenta de nuevo en ${Math.ceil(seconds / 60)} min.`;
 }
 
 // --- Session -----------------------------------------------------------------
@@ -29,14 +39,26 @@ export async function adminSignIn(_prev: AuthState, form: FormData): Promise<Aut
   const password = String(form.get("password") || "");
   if (!email || !password) return { error: "Escribe tu correo y contraseña." };
 
+  const svc = getServerSupabase();
+  const key = await clientKey("login");
+
+  // Bloqueo durable por IP (anti fuerza bruta) ANTES de tocar el auth.
+  const { data: lockedFor } = await svc.rpc("login_guard", { p_key: key });
+  if (typeof lockedFor === "number" && lockedFor > 0) return { error: lockedMsg(lockedFor) };
+
   const auth = await getAuthClient();
   const { error } = await auth.auth.signInWithPassword({ email, password });
-  if (error) return { error: "Correo o contraseña incorrectos." };
+  if (error) {
+    await svc.rpc("login_record_failure", { p_key: key, ...LOGIN_LIMIT });
+    return { error: "Correo o contraseña incorrectos." };
+  }
 
   if (!(await isEmailAdmin(email))) {
     await auth.auth.signOut();
     return { error: "Esta cuenta no tiene acceso de administrador." };
   }
+
+  await svc.rpc("login_clear", { p_key: key }); // éxito → resetea el contador
   redirect("/admin");
 }
 
@@ -46,19 +68,31 @@ export async function adminSignUp(_prev: AuthState, form: FormData): Promise<Aut
   if (!isSupabaseConfigured()) return { error: "Servicio no disponible." };
   const email = emailOf(form);
   const password = String(form.get("password") || "");
-  if (!email || password.length < 8)
-    return { error: "Usa una contraseña de al menos 8 caracteres." };
-  if (!(await isEmailAdmin(email)))
-    return { error: "Este correo no está autorizado como administrador." };
+  if (!email || password.length < MIN_PASSWORD)
+    return { error: `Usa una contraseña de al menos ${MIN_PASSWORD} caracteres.` };
 
   const svc = getServerSupabase();
+  const key = await clientKey("login");
+  const { data: lockedFor } = await svc.rpc("login_guard", { p_key: key });
+  if (typeof lockedFor === "number" && lockedFor > 0) return { error: lockedMsg(lockedFor) };
+
+  // Mensaje neutral: NO revela si un correo está o no en la allowlist de admins
+  // (cierra el oráculo de enumeración). Los intentos no autorizados cuentan para
+  // el throttle igual que un login fallido.
+  const GENERIC = "No se pudo crear la cuenta. Verifica los datos o contacta a un administrador.";
+
+  if (!(await isEmailAdmin(email))) {
+    await svc.rpc("login_record_failure", { p_key: key, ...LOGIN_LIMIT });
+    return { error: GENERIC };
+  }
+
   const { error: createErr } = await svc.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   });
   if (createErr && !/already|registered|exists/i.test(createErr.message))
-    return { error: "No se pudo crear la cuenta. Intenta de nuevo." };
+    return { error: GENERIC };
 
   const auth = await getAuthClient();
   const { error: signErr } = await auth.auth.signInWithPassword({ email, password });
@@ -66,8 +100,9 @@ export async function adminSignUp(_prev: AuthState, form: FormData): Promise<Aut
     return {
       error: createErr
         ? "Ese correo ya tiene una cuenta. Usa Iniciar sesión."
-        : "No se pudo iniciar sesión. Intenta de nuevo.",
+        : GENERIC,
     };
+  await svc.rpc("login_clear", { p_key: key });
   redirect("/admin");
 }
 
