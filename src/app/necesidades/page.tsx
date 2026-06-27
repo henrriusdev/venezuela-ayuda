@@ -158,7 +158,7 @@ export default async function Page({
                     <Link
                       key={`${n.kind}_${n.id}`}
                       href={n.href}
-                      className="block rounded-2xl border border-[#e6ecf2] bg-white p-4 transition hover:border-[#c9d6e3]"
+                      className="block min-w-0 overflow-hidden rounded-2xl border border-[#e6ecf2] bg-white p-4 transition hover:border-[#c9d6e3]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <h2 className="min-w-0 flex-1 truncate text-base font-semibold text-[#14212e]">
@@ -185,7 +185,9 @@ export default async function Page({
                         ) : null}
                       </div>
                       {n.subtitle && (
-                        <p className="mt-2 line-clamp-2 text-sm text-[#5b6b7b]">{n.subtitle}</p>
+                        <p className="mt-2 line-clamp-2 break-words text-sm text-[#5b6b7b]">
+                          {n.subtitle}
+                        </p>
                       )}
                     </Link>
                   );
