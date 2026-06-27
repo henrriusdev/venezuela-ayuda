@@ -23,8 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # Branch-aware: dispatch from staging → staging DB, otherwise prod. Reuses
+      # the same staging secrets as the migration workflows.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref_name == 'staging' && secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ github.ref_name == 'staging' && secrets.SUPABASE_SECRET_KEY_STAGING || secrets.SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
