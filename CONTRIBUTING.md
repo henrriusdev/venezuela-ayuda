@@ -57,6 +57,20 @@ npm run build
 node --test            # tests de lógica pura (.mjs)
 ```
 
+### Gestor de paquetes
+
+**npm es el estándar del repo.** El lockfile versionado es `package-lock.json` y
+es el que usan CI y Vercel — manténlo en sync.
+
+Puedes usar **otro gestor en local** (pnpm, yarn, bun) para tu desarrollo: sus
+lockfiles (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`) están en `.gitignore`, así
+que no se suben. Reglas para no romper el lockfile canónico:
+
+- **No** subas un lockfile que no sea `package-lock.json`.
+- **No** agregues el campo `packageManager` a `package.json`.
+- Si **agregas o cambias dependencias**, corre `npm install` y commitea el
+  `package-lock.json` actualizado junto con el cambio en `package.json`.
+
 ## Flujo de trabajo (issue → staging → QA → main)
 
 El ciclo completo, de principio a fin:
