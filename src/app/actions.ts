@@ -92,7 +92,7 @@ export async function submitCheckin(
   if (!isSupabaseConfigured()) return notConfigured();
   if (isBot(form)) return { ok: true }; // silently drop
 
-  const limited = rateLimit(await clientKey("checkin"), { limit: 6, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("checkin"), { limit: 6, windowSec: 60 });
   if (!limited.ok)
     return {
       ok: false,
@@ -178,7 +178,7 @@ export async function submitHelpRequest(
   if (!isSupabaseConfigured()) return notConfigured();
   if (isBot(form)) return { ok: true };
 
-  const limited = rateLimit(await clientKey("request"), { limit: 8, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("request"), { limit: 8, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados envíos. Espera ${limited.retryAfterSec}s.` };
 
@@ -241,7 +241,7 @@ export async function submitDamagedReport(
   if (!isSupabaseConfigured()) return notConfigured();
   if (isBot(form)) return { ok: true };
 
-  const limited = rateLimit(await clientKey("damaged"), { limit: 8, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("damaged"), { limit: 8, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados envíos. Espera ${limited.retryAfterSec}s.` };
 
@@ -324,7 +324,7 @@ export async function submitHelpOffer(
   if (!isSupabaseConfigured()) return notConfigured();
   if (isBot(form)) return { ok: true };
 
-  const limited = rateLimit(await clientKey("offer"), { limit: 8, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("offer"), { limit: 8, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados envíos. Espera ${limited.retryAfterSec}s.` };
 
@@ -403,7 +403,7 @@ export async function markCheckinFound(
   found: boolean
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
-  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
   if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
@@ -434,7 +434,7 @@ export async function resolveHelpRequest(
   resolved: boolean
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
-  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
   if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
@@ -463,7 +463,7 @@ export async function resolveDamagedReport(
   resolved: boolean
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
-  const limited = rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("manage"), { limit: 20, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados intentos. Espera ${limited.retryAfterSec}s.` };
   if (!UUID_RE.test(id) || !token) return { ok: false, error: "No autorizado." };
@@ -498,7 +498,7 @@ export async function submitSighting(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
   if (cleanText(website, 100)) return { ok: true }; // honeypot
-  const limited = rateLimit(await clientKey("sighting"), { limit: 10, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("sighting"), { limit: 10, windowSec: 60 });
   if (!limited.ok) return { ok: false, error: `Espera ${limited.retryAfterSec}s.` };
   if (!UUID_RE.test(checkinId)) return { ok: false, error: "Solicitud inválida." };
 
@@ -564,7 +564,7 @@ export async function respondToRequest(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { ok: false, error: "Servicio no disponible." };
   if (cleanText(website, 100)) return { ok: true }; // honeypot
-  const limited = rateLimit(await clientKey("respond"), { limit: 10, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("respond"), { limit: 10, windowSec: 60 });
   if (!limited.ok) return { ok: false, error: `Espera ${limited.retryAfterSec}s.` };
   if (!UUID_RE.test(requestId)) return { ok: false, error: "Solicitud inválida." };
 
@@ -627,7 +627,7 @@ export async function submitCollectionCenter(
   if (!isSupabaseConfigured()) return notConfigured();
   if (isBot(form)) return { ok: true };
 
-  const limited = rateLimit(await clientKey("center"), { limit: 5, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("center"), { limit: 5, windowSec: 60 });
   if (!limited.ok)
     return { ok: false, error: `Demasiados envíos. Espera ${limited.retryAfterSec}s.` };
 

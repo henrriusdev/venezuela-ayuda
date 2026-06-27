@@ -905,6 +905,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      // Hand-added for 0022_rate_limit (durable rate limiter). A fresh
+      // `npm run types:*` after applying the migration will include it.
+      rate_limit_hit: {
+        Args: { p_key: string; p_limit: number; p_window_sec: number }
+        Returns: { allowed: boolean; retry_after: number }[]
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined

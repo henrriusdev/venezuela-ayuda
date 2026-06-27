@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!frConfigured())
     return NextResponse.json({ ok: true, possible_duplicate: false, disabled: true });
 
-  const rl = rateLimit(await clientKey("fr-check"), { limit: 30, windowSec: 60 });
+  const rl = await rateLimit(await clientKey("fr-check"), { limit: 30, windowSec: 60 });
   if (!rl.ok) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
 
   let photo = "";

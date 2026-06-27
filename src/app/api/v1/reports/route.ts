@@ -45,7 +45,7 @@ const MAX_BODY_BYTES = 512 * 1024; // req.json() bufferea todo el body antes del
 
 export async function GET(req: Request) {
   // Rate-limit best-effort por IP (lectura abierta; el límite blunt-ea abuso).
-  const rl = rateLimit(await clientKey("reports"), { limit: 120, windowSec: 60 });
+  const rl = await rateLimit(await clientKey("reports"), { limit: 120, windowSec: 60 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes." },
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
   const source = partner.source;
 
   // Rate-limit best-effort por socio (por-lambda; el tope de batch es el backstop real).
-  const rl = rateLimit(`reports:write:${source}`, { limit: 120, windowSec: 60 });
+  const rl = await rateLimit(`reports:write:${source}`, { limit: 120, windowSec: 60 });
   if (!rl.ok) {
     return NextResponse.json(
       errorBody("Demasiadas solicitudes.", requestId),

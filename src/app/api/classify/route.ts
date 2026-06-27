@@ -42,7 +42,7 @@ function sanitize(input: unknown, fallback: Classification): Classification {
 }
 
 export async function POST(req: Request) {
-  const limited = rateLimit(await clientKey("classify"), { limit: 20, windowSec: 60 });
+  const limited = await rateLimit(await clientKey("classify"), { limit: 20, windowSec: 60 });
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes." },

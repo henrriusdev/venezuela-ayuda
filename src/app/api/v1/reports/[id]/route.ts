@@ -100,7 +100,7 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ error: "id inválido (se espera un uuid)." }, { status: 400 });
   }
 
-  const rl = rateLimit(await clientKey("reports:item"), { limit: 120, windowSec: 60 });
+  const rl = await rateLimit(await clientKey("reports:item"), { limit: 120, windowSec: 60 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes." },
@@ -164,7 +164,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const source = partner.source;
 
-  const rl = rateLimit(`reports:write:${source}`, { limit: 120, windowSec: 60 });
+  const rl = await rateLimit(`reports:write:${source}`, { limit: 120, windowSec: 60 });
   if (!rl.ok) {
     return NextResponse.json(
       errorBody("Demasiadas solicitudes.", requestId),

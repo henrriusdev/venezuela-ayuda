@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     return new NextResponse(null, { status: 204 });
   }
 
-  const rl = rateLimit(await clientKey("client-error"), { limit: 30, windowSec: 60 });
+  const rl = await rateLimit(await clientKey("client-error"), { limit: 30, windowSec: 60 });
   if (!rl.ok) {
     // 204: el cliente no debe reintentar ni mostrar nada; es telemetría best-effort.
     return new NextResponse(null, { status: 204 });
