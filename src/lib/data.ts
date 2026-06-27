@@ -12,7 +12,14 @@ import type {
   MapMarker,
   LatLng,
 } from "@/lib/types";
-import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY, URGENCY_LEVELS } from "@/lib/constants";
+import {
+  HELP_CATEGORIES,
+  OFFER_CATEGORIES,
+  DAMAGE_SEVERITY,
+  URGENCY_LEVELS,
+  type UrgencyLevel,
+  type HelpCategory,
+} from "@/lib/constants";
 import type { HelpCity, HelpNeed } from "@/lib/helpAbroad";
 import { formatItems } from "@/lib/validation";
 import { parseCsv, norm } from "@/lib/csv";
@@ -390,6 +397,109 @@ export async function getMatchingRequests(params: {
     return a.created_at < b.created_at ? 1 : -1;
   });
   return rows;
+}
+
+// Unified "active needs" list: people needing help (checkins NEEDS_HELP), missing
+// people being searched (LOOKING_FOR_SOMEONE), and place/structured requests
+// (help_requests). Normalized to one shape so a single browse page can list them
+// with kind/category/city filters.
+export type NeedKind = "persona" | "lugar" | "desaparecido";
+
+export interface ActiveNeed {
+  kind: NeedKind;
+  id: string;
+  title: string;
+  subtitle: string | null;
+  city: string | null;
+  urgency: UrgencyLevel | null; // only lugares carry urgency
+  category: HelpCategory | null;
+  href: string;
+  created_at: string;
+  responseCount?: number;
+}
+
+const NEED_LIMIT = 80;
+type CheckinLite = {
+  id: string; name: string; city: string | null;
+  message: string | null; place_name: string | null; created_at: string;
+};
+
+export async function getActiveNeeds(
+  params: { kind?: NeedKind; category?: string; city?: string } = {},
+): Promise<ActiveNeed[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  const city = params.city?.trim();
+  const want = (k: NeedKind) => !params.kind || params.kind === k;
+  // PromiseLike: the Supabase query builder is thenable but not a full Promise.
+  const tasks: PromiseLike<ActiveNeed[]>[] = [];
+
+  if (want("persona")) {
+    let q = supabase
+      .from("public_checkins")
+      .select("id,name,city,message,place_name,created_at")
+      .eq("status", "NEEDS_HELP")
+      .order("created_at", { ascending: false })
+      .limit(NEED_LIMIT);
+    if (city) q = q.ilike("city", `%${escapeLike(city)}%`);
+    tasks.push(
+      q.then(({ data }) =>
+        ((data ?? []) as CheckinLite[]).map((c) => ({
+          kind: "persona" as const, id: c.id, title: c.name,
+          subtitle: c.message ?? c.place_name ?? null, city: c.city,
+          urgency: null, category: null, href: `/persona/${c.id}`, created_at: c.created_at,
+        })),
+      ),
+    );
+  }
+
+  if (want("desaparecido")) {
+    let q = supabase
+      .from("public_checkins")
+      .select("id,name,city,message,place_name,created_at")
+      .eq("status", "LOOKING_FOR_SOMEONE")
+      .is("found_at", null)
+      .order("created_at", { ascending: false })
+      .limit(NEED_LIMIT);
+    if (city) q = q.ilike("city", `%${escapeLike(city)}%`);
+    tasks.push(
+      q.then(({ data }) =>
+        ((data ?? []) as CheckinLite[]).map((c) => ({
+          kind: "desaparecido" as const, id: c.id, title: c.name,
+          subtitle: c.city ? `Última ubicación: ${c.city}` : c.message ?? null, city: c.city,
+          urgency: null, category: null, href: `/persona/${c.id}`, created_at: c.created_at,
+        })),
+      ),
+    );
+  }
+
+  if (want("lugar")) {
+    tasks.push(
+      getMatchingRequests({
+        categories: params.category ? [params.category] : undefined,
+        city,
+        limit: NEED_LIMIT,
+      }).then((rows) =>
+        rows.map((r) => ({
+          kind: "lugar" as const, id: r.id,
+          title: r.place_name || (HELP_CATEGORIES[r.category]?.label ?? r.category),
+          subtitle: r.description ?? null, city: r.city,
+          urgency: r.urgency, category: r.category, href: `/solicitud/${r.id}`,
+          created_at: r.created_at, responseCount: r.responseCount,
+        })),
+      ),
+    );
+  }
+
+  const all = (await Promise.all(tasks)).flat();
+  // Urgent place-requests first, then most recent across all kinds.
+  const w = (u: UrgencyLevel | null) => (u ? URGENCY_LEVELS[u].weight : 0);
+  all.sort((a, b) => {
+    const du = w(b.urgency) - w(a.urgency);
+    if (du !== 0) return du;
+    return a.created_at < b.created_at ? 1 : -1;
+  });
+  return all;
 }
 
 export async function getHelpRequest(
