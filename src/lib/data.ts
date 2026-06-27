@@ -154,6 +154,29 @@ export async function searchHelpRequests(params: {
 const HOSPITAL_REGISTRY_CSV_URL =
   "https://docs.google.com/spreadsheets/d/1fRQ3zEkIFMV2SYEjQiCuwewKAJDSixRepzBUf3ZFqf4/gviz/tq?tqx=out:csv&gid=963077964";
 
+// Fetch + parse the whole sheet ONCE and cache the parsed ROWS (not the response
+// stream). We cache the result via unstable_cache and fetch with `no-store`, so
+// Next never caches the response body — that response-stream cache was what threw
+// `transformAlgorithm` / `terminated` / "Failed to set fetch cache" when Google
+// closed the socket mid-stream. AbortSignal.timeout bounds a hung connection.
+const loadHospitalRegistryRows = unstable_cache(
+  async (): Promise<string[][]> => {
+    try {
+      const res = await fetch(HOSPITAL_REGISTRY_CSV_URL, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return [];
+      return parseCsv(await res.text());
+    } catch {
+      return [];
+    }
+  },
+  ["hospital-registry-rows"],
+  { revalidate: 120 },
+);
+
 export async function searchHospitalRegistry(params: {
   q?: string;
   city?: string;
@@ -165,19 +188,7 @@ export async function searchHospitalRegistry(params: {
   const cityQuery = norm(params.city ?? "");
   if (nameTokens.length === 0 && cityQuery.length === 0) return [];
 
-  let text: string;
-  try {
-    const res = await fetch(HOSPITAL_REGISTRY_CSV_URL, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      next: { revalidate: 120 }, // near-realtime, but don't hammer Google
-    });
-    if (!res.ok) return [];
-    text = await res.text();
-  } catch {
-    return [];
-  }
-
-  const rows = parseCsv(text);
+  const rows = await loadHospitalRegistryRows();
   if (rows.length < 2) return [];
 
   // Resolve columns by normalized header so reordering the sheet can't break us.
@@ -232,6 +243,29 @@ export async function searchHospitalRegistry(params: {
 const MISSING_PERSONS_API =
   "https://desaparecidos-terremoto-api.theempire.tech/api/personas";
 
+// Per-query fetch, but we cache the RESULT (unstable_cache) and fetch `no-store`
+// so Next never caches the flaky response stream (same fix as the hospital sheet).
+const fetchMissingPersonsItems = unstable_cache(
+  async (term: string, limit: number): Promise<unknown[]> => {
+    try {
+      const url =
+        `${MISSING_PERSONS_API}?q=${encodeURIComponent(term)}&page=1&pageSize=${limit}`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return [];
+      const data = (await res.json()) as { items?: unknown[] };
+      return Array.isArray(data.items) ? data.items : [];
+    } catch {
+      return [];
+    }
+  },
+  ["missing-persons-api"],
+  { revalidate: 120 },
+);
+
 export async function searchMissingPersonsApi(params: {
   q?: string;
   city?: string;
@@ -240,22 +274,7 @@ export async function searchMissingPersonsApi(params: {
   const term = (params.q || params.city || "").trim();
   if (term.length < 2) return [];
 
-  let data: { items?: unknown[] };
-  try {
-    const url =
-      `${MISSING_PERSONS_API}?q=${encodeURIComponent(term)}` +
-      `&page=1&pageSize=${params.limit ?? 20}`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      next: { revalidate: 120 }, // per-query cache; don't hammer the source
-    });
-    if (!res.ok) return [];
-    data = await res.json();
-  } catch {
-    return [];
-  }
-
-  const items = Array.isArray(data.items) ? data.items : [];
+  const items = await fetchMissingPersonsItems(term, params.limit ?? 20);
   const out: MissingPersonMatch[] = [];
   for (const raw of items) {
     const p = raw as Record<string, unknown>;
