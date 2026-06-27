@@ -1,11 +1,13 @@
 name: Apply migrations
 
-# Auto-applies any pending migrations to the database on every push to main
-# (and manually). Each migration runs once, gated by the applied_migrations
-# table. Requires the SUPABASE_DB_URL secret (Supabase "Session pooler" URI).
+# Auto-applies any pending migrations on every push to main (→ prod) and staging
+# (→ staging DB), and manually. Each migration runs once, gated by the
+# applied_migrations table. Needs two "Session pooler" URI secrets:
+#   SUPABASE_DB_URL          → production DB (main)
+#   SUPABASE_DB_URL_STAGING  → staging DB (staging branch)
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     paths:
       - "supabase/migrations/**"
       - "scripts/apply-migrations.sh"
@@ -13,7 +15,8 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: apply-migrations
+  # Per-branch group so a staging run never queues behind a main run.
+  group: apply-migrations-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Pick the DB by branch: staging → staging secret, everything else → prod.
+      SUPABASE_DB_URL: ${{ github.ref == 'refs/heads/staging' && secrets.SUPABASE_DB_URL_STAGING || secrets.SUPABASE_DB_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Install psql
