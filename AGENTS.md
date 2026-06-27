@@ -95,6 +95,8 @@ docs/                      Handoffs, plans, and operator guidance
 - Does the change preserve private-field redaction in UI, API, and audit history?
 - Does every write path keep source attribution and auditability?
 - Are new migrations forward-only and safe for both `staging` and `main`?
+- Does issue automation only add obvious first-pass labels and leave
+  `status:triaged`, assignment, and closing decisions to humans?
 - Are public docs clear that reports are community coordination signals, not
   official government or structural-safety certification?
 - Did you run the narrowest useful test plus `npm run lint` or `npm run build`

@@ -27,6 +27,9 @@ Lee esto una vez antes de tu primer PR. Toma 5 minutos y te ahorra rebotes.
    y espera el triage.
 4. **Una vez asignado**, sigue el [flujo de trabajo](#flujo-de-trabajo-issue--staging--qa--main).
 
+El `Issue triage agent` puede poner labels mecánicas (`area:*`, `priority:*`, `security`),
+pero **no reemplaza al triager humano**: espera `status:triaged` antes de empezar.
+
 > ¿Por qué? Con muchos colaboradores, el issue es lo que coordina quién hace qué, evita
 > trabajo duplicado y deja decidir **antes** de invertir esfuerzo. Un PR sin issue asignado
 > probablemente se cierre pidiendo que pases por aquí primero.
