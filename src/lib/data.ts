@@ -686,8 +686,13 @@ async function getMapMarkersUncached(): Promise<MapMarker[]> {
       lat: o.latitude!,
       lng: o.longitude!,
       title: `Ofrece: ${OFFER_CATEGORIES[o.category]?.label ?? o.category}`,
-      subtitle: (o.description ?? o.city ?? undefined)?.slice(0, 120),
-      href: "/mapa",
+      // Show the available info IN the popup — offers have no detail page and the
+      // contact is private, so there's nothing to navigate to. `href: ""` makes
+      // MapView render no link (previously "/mapa", which just reloaded the map).
+      subtitle:
+        [o.description, o.city, o.availability].filter(Boolean).join(" · ").slice(0, 200) ||
+        undefined,
+      href: "",
     });
   }
 
