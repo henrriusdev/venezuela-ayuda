@@ -115,6 +115,46 @@ export async function verifyDamagedReport(id: string, verified: boolean): Promis
   return { ok: true };
 }
 
+// Correct partially-wrong info on a community damaged-building report (text,
+// city, severity) before/after verifying it. Patches via the audited RPC.
+const DAMAGE_SEVERITIES = new Set(["CRACKS", "PARTIAL", "COLLAPSE_RISK", "COLLAPSED"]);
+
+export async function updateDamagedReport(
+  id: string,
+  fields: Record<string, unknown>,
+): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
+
+  const update: Record<string, unknown> = {};
+  const TEXT: Record<string, number> = { place_name: 120, description: 800, city: 80 };
+  for (const [k, max] of Object.entries(TEXT)) {
+    if (!(k in fields)) continue;
+    const v = String(fields[k] ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+    if (k === "place_name" && !v)
+      return { ok: false, error: "El nombre del lugar no puede quedar vacío." };
+    update[k] = v || null;
+  }
+  if ("severity" in fields) {
+    const s = String(fields.severity ?? "");
+    if (!DAMAGE_SEVERITIES.has(s)) return { ok: false, error: "Severidad inválida." };
+    update.severity = s;
+  }
+  if (Object.keys(update).length === 0) return { ok: true };
+
+  const svc = getServerSupabase();
+  const { error } = await svc.rpc("patch_report", patchArgs("damaged_reports", id, update));
+  if (error) return { ok: false, error: "No se pudo guardar." };
+  revalidatePath("/mapa");
+  revalidatePath(`/edificio/${id}`);
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 export async function setHidden(table: string, id: string, hidden: boolean): Promise<Result> {
   try {
     await requireAdmin();
