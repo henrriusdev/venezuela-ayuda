@@ -163,7 +163,10 @@ async function fetchSheet() {
     const report = get(iReport), note = get(iNote);
     const firstUrl = get(iSearch).split(/\s+/).find((s) => s.startsWith("http")) || null;
     out.push({
-      external_id: `sheet_${norm(building) || norm(zone)}_${norm(city)}`.replace(/\s+/g, "-").slice(0, 200),
+      // Row-index prefix guarantees uniqueness — multiple unnamed buildings in
+      // the same city/source must not collide (damaged_reports now has a UNIQUE
+      // index on (source, external_id), added by migration 0015_api_partners).
+      external_id: `sheet_${idx}_${norm(building) || norm(zone) || "na"}_${norm(city)}`.replace(/\s+/g, "-").slice(0, 200),
       place_name: building || zone,
       description: [report, [zone, city].filter(Boolean).join(", "), note].filter(Boolean).join(" — ") || null,
       severity: "PARTIAL",
@@ -188,6 +191,12 @@ const rows = [...sheet, ...koboNew];
 
 console.log(`Kobo: ${kobo.length} · Sheet: ${sheet.length} · Kobo after dedup: ${koboNew.length}`);
 console.log(`→ ${rows.length} damaged-building rows to persist`);
+
+// damaged_reports has a UNIQUE index on (source, external_id) — fail loudly here
+// rather than half-insert and trip the constraint.
+const keys = new Set(), dups = [];
+for (const r of rows) { const k = `${r.source}|${r.external_id}`; if (keys.has(k)) dups.push(k); else keys.add(k); }
+if (dups.length) { console.error(`ABORT: ${dups.length} duplicate (source, external_id):`, dups.slice(0, 5)); process.exit(1); }
 
 if (DRY) {
   console.log("\n--- DRY RUN samples ---");
