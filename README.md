@@ -33,6 +33,17 @@ cuenta**, en **español**, y optimizada para **móviles y conexiones lentas**.
 
 ## Para desarrolladores
 
+Documentación útil para colaborar:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): mapa del backend, API, Supabase y privacidad.
+- [`AGENTS.md`](AGENTS.md): reglas para agentes de código y automatizaciones.
+- [`docs/OPEN_SOURCE_FORKING.md`](docs/OPEN_SOURCE_FORKING.md): cómo este PR complementa la capa de colaboración propuesta en #33.
+
+El flujo de contribución, seguridad, templates, CODEOWNERS, labels y gobernanza
+se mantienen en el PR de colaboración #33 para evitar duplicar reglas operativas.
+Los PRs normales deben apuntar a `staging`; la app de revisión está en
+[venezuela-ayuda-staging.vercel.app](https://venezuela-ayuda-staging.vercel.app/).
+
 ### Stack
 
 Next.js 16 (App Router · Server Components · Server Actions) · TypeScript ·
