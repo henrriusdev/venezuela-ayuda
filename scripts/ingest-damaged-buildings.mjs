@@ -198,14 +198,7 @@ const keys = new Set(), dups = [];
 for (const r of rows) { const k = `${r.source}|${r.external_id}`; if (keys.has(k)) dups.push(k); else keys.add(k); }
 if (dups.length) { console.error(`ABORT: ${dups.length} duplicate (source, external_id):`, dups.slice(0, 5)); process.exit(1); }
 
-if (DRY) {
-  console.log("\n--- DRY RUN samples ---");
-  console.log("sheet[0]:", JSON.stringify(sheet[0]));
-  console.log("kobo[0]: ", JSON.stringify(koboNew[0]));
-  console.log("\nNo DB writes. Re-run without --dry to ingest.");
-  process.exit(0);
-}
-
+// Target DB creds (used for both the vs-existing dedup and the write).
 let env = {};
 try {
   env = Object.fromEntries(readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -214,10 +207,54 @@ try {
 } catch {}
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY || env.SUPABASE_SECRET_KEY;
-if (!URL_ || !KEY) { console.error("Missing NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY"); process.exit(1); }
-const REST = `${URL_}/rest/v1`;
+const REST = URL_ && KEY ? `${URL_}/rest/v1` : null;
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" };
 
+// Paginated fetch — never silently truncates at PostgREST's page cap.
+async function fetchAll(path) {
+  const out = []; const page = 1000;
+  for (let from = 0; ; from += page) {
+    const res = await fetch(`${REST}/${path}`, { headers: { ...H, Range: `${from}-${from + page - 1}` } });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    const chunk = await res.json();
+    out.push(...chunk);
+    if (chunk.length < page) return out;
+  }
+}
+
+// Dedup against EXISTING rows already in the target DB (community reports + prior
+// sister-site ingests). Drop a feed row when it sits within 75 m of an existing
+// building (visual duplicate) or would collide on the (source, external_id)
+// unique index from migration 0015. Excludes our own prior feed rows — the
+// DELETE below replaces those. No-op when the DB has no pre-existing rows (staging).
+let persist = rows;
+if (REST) {
+  const existing = await fetchAll(
+    "damaged_reports?select=latitude,longitude,source,external_id" +
+    "&or=(external_id.is.null,and(external_id.not.like.kobo_*,external_id.not.like.sheet_*))");
+  const exKeys = new Set(existing.map((e) => `${e.source}|${e.external_id}`));
+  const exGeo = existing.filter((e) => e.latitude != null && e.longitude != null);
+  let dropGeo = 0, dropKey = 0;
+  persist = rows.filter((r) => {
+    if (exKeys.has(`${r.source}|${r.external_id}`)) { dropKey++; return false; }
+    if (exGeo.some((e) => haversineKm({ lat: r.latitude, lng: r.longitude }, { lat: e.latitude, lng: e.longitude }) <= DUP_RADIUS_KM)) { dropGeo++; return false; }
+    return true;
+  });
+  console.log(`Existing non-feed rows: ${existing.length} · dropped ${dropGeo} (within 75 m) + ${dropKey} (key collision) → ${persist.length} to persist`);
+}
+
+if (DRY) {
+  console.log("\n--- DRY RUN samples ---");
+  console.log("sheet[0]:", JSON.stringify(sheet[0]));
+  console.log("kobo[0]: ", JSON.stringify(koboNew[0]));
+  console.log(REST
+    ? "(vs-existing dedup applied above — read-only, no writes)"
+    : "(no creds → vs-existing dedup skipped; set env to preview the prod impact)");
+  console.log("Re-run without --dry to ingest.");
+  process.exit(0);
+}
+
+if (!REST) { console.error("Missing NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY"); process.exit(1); }
 console.log(`\nTarget: ${URL_}`);
 // Idempotent: remove prior feed-sourced rows, then insert. Community rows (no
 // kobo_/sheet_ external_id) are untouched.
@@ -225,6 +262,6 @@ const del = await fetch(`${REST}/damaged_reports?or=(external_id.like.kobo_*,ext
   { method: "DELETE", headers: { ...H, Prefer: "return=minimal" } });
 if (!del.ok) { console.error(`delete failed: ${del.status} ${await del.text()}`); process.exit(1); }
 const ins = await fetch(`${REST}/damaged_reports`,
-  { method: "POST", headers: { ...H, Prefer: "return=minimal" }, body: JSON.stringify(rows) });
+  { method: "POST", headers: { ...H, Prefer: "return=minimal" }, body: JSON.stringify(persist) });
 if (!ins.ok) { console.error(`insert failed: ${ins.status} ${await ins.text()}`); process.exit(1); }
-console.log(`Ingested ${rows.length} damaged-building rows.`);
+console.log(`Ingested ${persist.length} damaged-building rows.`);
