@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServerSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
 import { rateLimit, clientKey } from "@/lib/rateLimit";
+import { stripImageMetadata } from "@/lib/stripExif.mjs";
 import {
   cleanText,
   cleanOptional,
@@ -61,11 +62,15 @@ async function uploadCheckinPhoto(
   const ext = m[2] === "jpeg" ? "jpg" : m[2];
   const buffer = Buffer.from(m[3], "base64");
   if (buffer.byteLength < 100 || buffer.byteLength > 3_000_000) return null;
+  // Quita EXIF/GPS/metadatos antes de subir al bucket PÚBLICO (defensa en
+  // profundidad: el picker ya re-encoda, pero una subida directa no pasaría
+  // por ahí y podría filtrar la ubicación exacta de quien reporta).
+  const clean = stripImageMetadata(buffer, contentType);
   try {
     const path = `${id}.${ext}`;
     const { error } = await supabase.storage
       .from("checkin-photos")
-      .upload(path, buffer, { contentType, upsert: true });
+      .upload(path, clean, { contentType, upsert: true });
     if (error) return null;
     return supabase.storage.from("checkin-photos").getPublicUrl(path).data.publicUrl ?? null;
   } catch {
