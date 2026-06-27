@@ -4,13 +4,15 @@ name: Dedup cleanup
 # destructivo salvo colapsar duplicados con confianza alta).
 #
 # El PULL (scrape de sitios hermanos) se RETIRÓ: el hub es push-only — los socios
-# reportan vía POST /api/v1/ingest. Este cron conserva el ÚNICO proceso de dedup
-# que corre hoy, hasta que el proceso de dedup dedicado (otro equipo) lo reemplace.
-# No borrar sin confirmar que el reemplazo está corriendo en producción.
+# reportan vía POST /api/v1/ingest. Este job conserva el dedup fuzzy.
+#
+# SCHEDULE EN PAUSA: el cron horario se deja DESHABILITADO a propósito (no se
+# reactiva al promover a main). Se corre solo manualmente desde la pestaña
+# Actions hasta decidir conscientemente reactivar el horario en producción.
 on:
-  schedule:
-    - cron: "0 * * * *" # cada hora
-  workflow_dispatch: {} # también manual desde la pestaña Actions
+  # schedule:
+  #   - cron: "0 * * * *" # cada hora — PAUSADO, reactivar deliberadamente
+  workflow_dispatch: {} # solo manual desde la pestaña Actions
 
 concurrency:
   group: dedup
