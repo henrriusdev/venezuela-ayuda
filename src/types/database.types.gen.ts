@@ -891,6 +891,20 @@ export type Database = {
       }
     }
     Functions: {
+      // Login throttle (migration 0021_login_throttle). Hand-added because these
+      // types were generated from a DB before 0021 existed; a fresh
+      // `npm run types:*` will include them automatically.
+      login_guard: { Args: { p_key: string }; Returns: number }
+      login_clear: { Args: { p_key: string }; Returns: undefined }
+      login_record_failure: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_window_sec: number
+          p_lockout_sec: number
+        }
+        Returns: undefined
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
