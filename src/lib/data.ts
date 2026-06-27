@@ -15,8 +15,6 @@ import type {
 import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY } from "@/lib/constants";
 import type { HelpCity, HelpNeed } from "@/lib/helpAbroad";
 import { formatItems } from "@/lib/validation";
-import { getDamagedBuildingMarkers } from "@/lib/damagedBuildings";
-import { getKoboDamagedMarkers } from "@/lib/koboBuildings";
 import { parseCsv, norm } from "@/lib/csv";
 
 const VENEZUELA = "Venezuela";
@@ -320,31 +318,10 @@ function haversineKm(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// KoboToolbox damaged-building reports are merged into the map last and deduped
-// against the other "damaged" sources by geolocation: a Kobo record within
-// ~75 m of an already-present damaged marker is assumed to be the same building
-// and dropped. Reuses haversineKm above.
-const DUP_RADIUS_KM = 0.075;
-
-// Kobo markers that are NOT within ~75 m of an existing damaged marker (i.e. not
-// the same building). Shared by the map merge and the stats count so both dedupe
-// identically.
-function dedupeKobo(kobo: MapMarker[], existingDamaged: MapMarker[]): MapMarker[] {
-  return kobo.filter(
-    (k) =>
-      !existingDamaged.some(
-        (d) =>
-          haversineKm({ lat: k.lat, lng: k.lng }, { lat: d.lat, lng: d.lng }) <=
-          DUP_RADIUS_KM,
-      ),
-  );
-}
-
-async function mergeKoboDamaged(markers: MapMarker[]): Promise<void> {
-  const existing = markers.filter((m) => m.kind === "damaged");
-  const kobo = await getKoboDamagedMarkers();
-  markers.push(...dedupeKobo(kobo, existing));
-}
+// Damaged-building reports now come from the DB (damaged_reports). The Kobo form
+// and curated Google Sheet are snapshotted into that table by
+// scripts/ingest-damaged-buildings.mjs, so the map/stats no longer fetch them
+// live — the DB is the single source of truth (durable + moderatable).
 
 export type MatchedRequest = PublicHelpRequest & { distanceKm?: number };
 
@@ -416,9 +393,8 @@ export async function getDamagedReport(
   return data as PublicDamagedReport;
 }
 
-// Community-reported damaged buildings (from the DB view). Separate from the
-// curated spreadsheet markers in getDamagedBuildingMarkers(); both use kind
-// "damaged" intentionally.
+// Damaged buildings from the DB view — the single source now, covering community
+// reports plus the Kobo/sheet rows snapshotted in by the ingest script.
 export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = getServerSupabase();
@@ -452,16 +428,10 @@ export async function getDamagedReportMarkers(): Promise<MapMarker[]> {
 }
 
 async function getMapMarkersUncached(): Promise<MapMarker[]> {
-  // Curated relief centers + damaged-building reports are always shown, even if
-  // the DB is unavailable. These run in parallel and fail soft.
-  const externalMarkers = [
-    await reliefCenterMarkers(),
-    await getDamagedBuildingMarkers(),
-  ].flat();
+  // Relief centers are curated and shown even if the DB is unavailable.
+  const externalMarkers = await reliefCenterMarkers();
   if (!isSupabaseConfigured()) {
-    const markers = [...externalMarkers];
-    await mergeKoboDamaged(markers);
-    return markers;
+    return [...externalMarkers];
   }
   const supabase = getServerSupabase();
 
@@ -553,9 +523,6 @@ async function getMapMarkersUncached(): Promise<MapMarker[]> {
 
   markers.push(...(await getDamagedReportMarkers()));
 
-  // Kobo last, so it dedupes against both the sheet and the DB damaged markers.
-  await mergeKoboDamaged(markers);
-
   return markers;
 }
 
@@ -576,7 +543,7 @@ async function getStatsUncached(): Promise<Stats> {
   if (!isSupabaseConfigured()) return ZERO_STATS;
   const supabase = getServerSupabase();
   const count = () => ({ count: "exact" as const, head: true });
-  const [safe, missing, found, requests, helpers, damaged, sheet, dbDamaged, kobo] = await Promise.all([
+  const [safe, missing, found, requests, helpers, damaged] = await Promise.all([
     supabase.from("public_checkins").select("id", count()).eq("status", "SAFE"),
     supabase
       .from("public_checkins")
@@ -590,24 +557,16 @@ async function getStatsUncached(): Promise<Stats> {
       .not("found_at", "is", null),
     supabase.from("public_help_requests").select("id", count()).neq("status", "RESOLVED"),
     supabase.from("public_help_offers").select("id", count()).eq("available", true),
+    // Damaged buildings now live entirely in the DB (Kobo + sheet snapshotted in).
     supabase.from("public_damaged_reports").select("id", count()).neq("status", "RESOLVED"),
-    // Curated spreadsheet damaged buildings (cached fetch — deduped with the map).
-    getDamagedBuildingMarkers(),
-    // DB damaged markers (coords) — used only to dedupe Kobo against, same as the map.
-    getDamagedReportMarkers(),
-    // KoboToolbox damaged buildings (cached fetch).
-    getKoboDamagedMarkers(),
   ]);
-  // Count only Kobo buildings that aren't already in the sheet or DB (geo-dedupe,
-  // identical to the map) so the headline stat doesn't double-count.
-  const koboNew = dedupeKobo(kobo, [...sheet, ...dbDamaged]);
   return {
     safe: safe.count ?? 0,
     missing: missing.count ?? 0,
     found: found.count ?? 0,
     requests: requests.count ?? 0,
     helpers: helpers.count ?? 0,
-    damaged: (damaged.count ?? 0) + sheet.length + koboNew.length,
+    damaged: damaged.count ?? 0,
   };
 }
 

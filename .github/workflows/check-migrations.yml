@@ -1,8 +1,12 @@
 name: Check migrations applied
 
 # Heads-up check on PRs: flags when a PR adds a migration that isn't applied to
-# the database yet. On merge to main, the "Apply migrations" workflow applies it
-# automatically — so this is informational.
+# the target branch's database yet. On merge, the "Apply migrations" workflow
+# applies it automatically — so this is informational.
+#
+# Branch-aware: checks against the DB of the PR's BASE branch — a PR into staging
+# checks the staging DB, a PR into main checks prod. Needs staging twins of the
+# secrets: NEXT_PUBLIC_SUPABASE_URL_STAGING + SUPABASE_SECRET_KEY_STAGING.
 on:
   pull_request:
   workflow_dispatch: {}
@@ -12,8 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # PR → github.base_ref (target branch); manual run → github.ref_name.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.base_ref == 'staging' || github.ref_name == 'staging') && secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ (github.base_ref == 'staging' || github.ref_name == 'staging') && secrets.SUPABASE_SECRET_KEY_STAGING || secrets.SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

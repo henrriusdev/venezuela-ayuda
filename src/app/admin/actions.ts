@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import { getAuthClient } from "@/lib/supabase/auth";
 import { getServerSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getAdminEmail, isEmailAdmin } from "@/lib/admin";
+import { generateApiKey, hashKey, parsePrefix } from "@/lib/apiAuth.mjs";
+import { patchArgs, deleteArgs } from "@/lib/internalWrite.mjs";
 
 export type AuthState = { error?: string };
 type Result = { ok: boolean; error?: string };
+type PartnerResult = Result & { key?: string; id?: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MODERATABLE = new Set(["checkins", "help_requests", "help_offers", "damaged_reports"]);
@@ -87,13 +90,13 @@ export async function verifyDamagedReport(id: string, verified: boolean): Promis
   }
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
-  const { error } = await svc
-    .from("damaged_reports")
-    .update({
+  const { error } = await svc.rpc(
+    "patch_report",
+    patchArgs("damaged_reports", id, {
       verified_at: verified ? new Date().toISOString() : null,
       verified_by: verified ? email : null,
     })
-    .eq("id", id);
+  );
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidatePath("/mapa");
   revalidatePath(`/edificio/${id}`);
@@ -110,7 +113,7 @@ export async function setHidden(table: string, id: string, hidden: boolean): Pro
   if (!MODERATABLE.has(table) || !UUID_RE.test(id))
     return { ok: false, error: "Solicitud inválida." };
   const svc = getServerSupabase();
-  const { error } = await svc.from(table).update({ hidden }).eq("id", id);
+  const { error } = await svc.rpc("patch_report", patchArgs(table, id, { hidden }));
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidatePath("/mapa");
   revalidatePath("/buscar");
@@ -127,7 +130,7 @@ export async function deleteReport(table: string, id: string): Promise<Result> {
   if (!MODERATABLE.has(table) || !UUID_RE.test(id))
     return { ok: false, error: "Solicitud inválida." };
   const svc = getServerSupabase();
-  const { error } = await svc.from(table).delete().eq("id", id);
+  const { error } = await svc.rpc("delete_report", deleteArgs(table, id));
   if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidatePath("/mapa");
   revalidatePath("/buscar");
@@ -144,7 +147,7 @@ export async function verifyCenter(id: string, verified: boolean): Promise<Resul
   }
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
-  const { error } = await svc.from("collection_centers").update({ verified }).eq("id", id);
+  const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, { verified }));
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
@@ -160,7 +163,7 @@ export async function setCenterHidden(id: string, hidden: boolean): Promise<Resu
   }
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
-  const { error } = await svc.from("collection_centers").update({ hidden }).eq("id", id);
+  const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, { hidden }));
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
@@ -176,7 +179,7 @@ export async function deleteCenter(id: string): Promise<Result> {
   }
   if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
   const svc = getServerSupabase();
-  const { error } = await svc.from("collection_centers").delete().eq("id", id);
+  const { error } = await svc.rpc("delete_report", deleteArgs("collection_centers", id));
   if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
@@ -224,7 +227,7 @@ export async function updateCenter(
   if (Object.keys(update).length === 0) return { ok: true };
 
   const svc = getServerSupabase();
-  const { error } = await svc.from("collection_centers").update(update).eq("id", id);
+  const { error } = await svc.rpc("patch_report", patchArgs("collection_centers", id, update));
   if (error) return { ok: false, error: "No se pudo guardar." };
   revalidatePath("/mapa");
   revalidatePath("/ayudar-fuera");
@@ -265,5 +268,68 @@ export async function removeAdmin(email: string): Promise<Result> {
   const { error } = await svc.from("admin_emails").delete().eq("email", clean);
   if (error) return { ok: false, error: "No se pudo quitar." };
   revalidatePath("/admin/admins");
+  return { ok: true };
+}
+
+// --- Manage collaborators (API partners) -------------------------------------
+const SOURCE_RE = /^[a-z0-9][a-z0-9.\-]{1,80}$/; // dominio/identificador del socio
+
+// Crea un colaborador y le emite su API key. La key se devuelve EN CLARO una
+// sola vez (en la DB solo queda el hash + prefix). El `source` identifica al
+// socio en cada reporte que ingrese con esta key.
+export async function createPartner(input: {
+  name: string;
+  source: string;
+  contact?: string;
+}): Promise<PartnerResult> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  const name = String(input.name || "").trim();
+  const source = String(input.source || "").trim().toLowerCase();
+  const contact = String(input.contact || "").trim() || null;
+  if (!name) return { ok: false, error: "Escribe el nombre del colaborador." };
+  if (!SOURCE_RE.test(source))
+    return { ok: false, error: "Source inválido (ej: cruzroja.org)." };
+
+  const key = generateApiKey();
+  const svc = getServerSupabase();
+  const { data, error } = await svc
+    .from("api_partners")
+    .insert({
+      name,
+      source,
+      key_hash: hashKey(key),
+      key_prefix: parsePrefix(key),
+      scopes: ["write"],
+      contact,
+    })
+    .select("id")
+    .single();
+  if (error) {
+    if (/duplicate|unique/i.test(error.message))
+      return { ok: false, error: "Ya existe un colaborador con ese source." };
+    return { ok: false, error: "No se pudo crear el colaborador." };
+  }
+  revalidatePath("/admin/colaboradores");
+  return { ok: true, key, id: data.id }; // key visible una sola vez; id no es secreto
+}
+
+export async function revokePartner(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+  if (!UUID_RE.test(id)) return { ok: false, error: "Id inválido." };
+  const svc = getServerSupabase();
+  const { error } = await svc
+    .from("api_partners")
+    .update({ active: false, revoked_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { ok: false, error: "No se pudo revocar." };
+  revalidatePath("/admin/colaboradores");
   return { ok: true };
 }
