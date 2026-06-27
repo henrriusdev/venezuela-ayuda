@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test scripts/*.test.mjs",
+    "types:dev": "supabase gen types typescript --local --schema public > ./src/types/database.types.gen.ts",
+    "types:prod": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > ./src/types/database.types.gen.ts",
+    "types:linked": "supabase gen types typescript --linked --schema public > ./src/types/database.types.gen.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
