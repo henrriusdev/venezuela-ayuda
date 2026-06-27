@@ -12,7 +12,14 @@ import type {
   MapMarker,
   LatLng,
 } from "@/lib/types";
-import { HELP_CATEGORIES, OFFER_CATEGORIES, DAMAGE_SEVERITY } from "@/lib/constants";
+import {
+  HELP_CATEGORIES,
+  OFFER_CATEGORIES,
+  DAMAGE_SEVERITY,
+  URGENCY_LEVELS,
+  type UrgencyLevel,
+  type HelpCategory,
+} from "@/lib/constants";
 import type { HelpCity, HelpNeed } from "@/lib/helpAbroad";
 import { formatItems } from "@/lib/validation";
 import { parseCsv, norm } from "@/lib/csv";
@@ -323,13 +330,17 @@ function haversineKm(a: LatLng, b: LatLng): number {
 // scripts/ingest-damaged-buildings.mjs, so the map/stats no longer fetch them
 // live — the DB is the single source of truth (durable + moderatable).
 
-export type MatchedRequest = PublicHelpRequest & { distanceKm?: number };
+export type MatchedRequest = PublicHelpRequest & {
+  distanceKm?: number;
+  responseCount?: number; // volunteers who already offered (count only, no PII)
+};
 
 export async function getMatchingRequests(params: {
   categories?: string[];
   lat?: number;
   lng?: number;
   city?: string;
+  status?: string; // "OPEN" | "IN_PROGRESS" to narrow; otherwise both (non-resolved)
   limit?: number;
 }): Promise<MatchedRequest[]> {
   if (!isSupabaseConfigured()) return [];
@@ -338,8 +349,9 @@ export async function getMatchingRequests(params: {
     .from("public_help_requests")
     .select("*")
     .neq("status", "RESOLVED")
-    .order("created_at", { ascending: false })
     .limit(params.limit ?? 150);
+  if (params.status === "OPEN" || params.status === "IN_PROGRESS")
+    query = query.eq("status", params.status);
   if (params.categories && params.categories.length)
     query = query.in("category", params.categories);
   if (params.city) query = query.ilike("city", `%${escapeLike(params.city)}%`);
@@ -348,21 +360,146 @@ export async function getMatchingRequests(params: {
   if (error) return [];
   const rows = (data ?? []) as MatchedRequest[];
 
-  const hasCoords =
-    Number.isFinite(params.lat) && Number.isFinite(params.lng);
+  // How many volunteers already offered (so the list doesn't pile onto handled
+  // needs). Count only — responder PII stays private to the requester.
+  const ids = rows.map((r) => r.id);
+  if (ids.length) {
+    const { data: resp } = await supabase
+      .from("request_responses")
+      .select("request_id")
+      .in("request_id", ids);
+    const counts = new Map<string, number>();
+    for (const r of (resp ?? []) as { request_id: string }[])
+      counts.set(r.request_id, (counts.get(r.request_id) ?? 0) + 1);
+    for (const r of rows) r.responseCount = counts.get(r.id) ?? 0;
+  }
+
+  const hasCoords = Number.isFinite(params.lat) && Number.isFinite(params.lng);
   if (hasCoords) {
     const origin = { lat: params.lat as number, lng: params.lng as number };
-    for (const r of rows) {
+    for (const r of rows)
       if (r.latitude != null && r.longitude != null)
         r.distanceKm = haversineKm(origin, { lat: r.latitude, lng: r.longitude });
-    }
-    rows.sort((a, b) => {
-      if (a.distanceKm == null) return b.distanceKm == null ? 0 : 1;
-      if (b.distanceKm == null) return -1;
-      return a.distanceKm - b.distanceKm;
-    });
   }
+
+  // Rank by URGENCY first (critical needs bubble up), then nearest when we have
+  // the volunteer's location, then most recent. Distance-only sorting buried
+  // critical-but-far requests below trivial-but-near ones.
+  const weight = (u: MatchedRequest["urgency"]) => URGENCY_LEVELS[u]?.weight ?? 0;
+  rows.sort((a, b) => {
+    const du = weight(b.urgency) - weight(a.urgency);
+    if (du !== 0) return du;
+    if (hasCoords) {
+      const da = a.distanceKm ?? Infinity;
+      const db = b.distanceKm ?? Infinity;
+      if (da !== db) return da - db;
+    }
+    return a.created_at < b.created_at ? 1 : -1;
+  });
   return rows;
+}
+
+// Unified "active needs" list: people needing help (checkins NEEDS_HELP), missing
+// people being searched (LOOKING_FOR_SOMEONE), and place/structured requests
+// (help_requests). Normalized to one shape so a single browse page can list them
+// with kind/category/city filters.
+export type NeedKind = "persona" | "lugar" | "desaparecido";
+
+export interface ActiveNeed {
+  kind: NeedKind;
+  id: string;
+  title: string;
+  subtitle: string | null;
+  city: string | null;
+  urgency: UrgencyLevel | null; // only lugares carry urgency
+  category: HelpCategory | null;
+  href: string;
+  created_at: string;
+  responseCount?: number;
+}
+
+const NEED_LIMIT = 80;
+type CheckinLite = {
+  id: string; name: string; city: string | null;
+  message: string | null; place_name: string | null; created_at: string;
+};
+
+export async function getActiveNeeds(
+  params: { kind?: NeedKind; category?: string; city?: string } = {},
+): Promise<ActiveNeed[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = getServerSupabase();
+  const city = params.city?.trim();
+  const want = (k: NeedKind) => !params.kind || params.kind === k;
+  // PromiseLike: the Supabase query builder is thenable but not a full Promise.
+  const tasks: PromiseLike<ActiveNeed[]>[] = [];
+
+  if (want("persona")) {
+    let q = supabase
+      .from("public_checkins")
+      .select("id,name,city,message,place_name,created_at")
+      .eq("status", "NEEDS_HELP")
+      .order("created_at", { ascending: false })
+      .limit(NEED_LIMIT);
+    if (city) q = q.ilike("city", `%${escapeLike(city)}%`);
+    tasks.push(
+      q.then(({ data }) =>
+        ((data ?? []) as CheckinLite[]).map((c) => ({
+          kind: "persona" as const, id: c.id, title: c.name,
+          subtitle: c.message ?? c.place_name ?? null, city: c.city,
+          urgency: null, category: null, href: `/persona/${c.id}`, created_at: c.created_at,
+        })),
+      ),
+    );
+  }
+
+  if (want("desaparecido")) {
+    let q = supabase
+      .from("public_checkins")
+      .select("id,name,city,message,place_name,created_at")
+      .eq("status", "LOOKING_FOR_SOMEONE")
+      .is("found_at", null)
+      .order("created_at", { ascending: false })
+      .limit(NEED_LIMIT);
+    if (city) q = q.ilike("city", `%${escapeLike(city)}%`);
+    tasks.push(
+      q.then(({ data }) =>
+        ((data ?? []) as CheckinLite[]).map((c) => ({
+          kind: "desaparecido" as const, id: c.id, title: c.name,
+          subtitle: c.city ? `Última ubicación: ${c.city}` : c.message ?? null, city: c.city,
+          urgency: null, category: null, href: `/persona/${c.id}`, created_at: c.created_at,
+        })),
+      ),
+    );
+  }
+
+  if (want("lugar")) {
+    tasks.push(
+      getMatchingRequests({
+        categories: params.category ? [params.category] : undefined,
+        city,
+        limit: NEED_LIMIT,
+      }).then((rows) =>
+        rows.map((r) => ({
+          kind: "lugar" as const, id: r.id,
+          title: r.place_name || (HELP_CATEGORIES[r.category]?.label ?? r.category),
+          subtitle: r.description ?? null, city: r.city,
+          urgency: r.urgency, category: r.category, href: `/solicitud/${r.id}`,
+          created_at: r.created_at, responseCount: r.responseCount,
+        })),
+      ),
+    );
+  }
+
+  const all = (await Promise.all(tasks)).flat();
+  // Urgent place-requests first, then most recent across all kinds.
+  const w = (u: UrgencyLevel | null) => (u ? URGENCY_LEVELS[u].weight : 0);
+  all.sort((a, b) => {
+    const du = w(b.urgency) - w(a.urgency);
+    if (du !== 0) return du;
+    return a.created_at < b.created_at ? 1 : -1;
+  });
+  return all;
 }
 
 export async function getHelpRequest(
