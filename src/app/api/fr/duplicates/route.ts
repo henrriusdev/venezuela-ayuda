@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin";
 import { FR_BASE, frHeaders, frConfigured, FR_SOURCE } from "@/lib/fr";
+import { logWarn } from "@/lib/log.mjs";
 
 // Depuración: cruza NUESTRA propia base por rostro y lista posibles duplicados.
 // SOLO admin.
@@ -25,7 +26,9 @@ export async function GET(req: Request) {
       status: r.status,
       headers: { "content-type": "application/json" },
     });
-  } catch {
+  } catch (err) {
+    // FR-API caído/timeout: sin este log el listado de duplicados falla en silencio.
+    logWarn("fr_proxy_failed", { scope: "api.fr.duplicates" }, err);
     return NextResponse.json({ ok: false, error: "No se pudo conectar con el FR-API." }, { status: 502 });
   }
 }

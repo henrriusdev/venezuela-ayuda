@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit, clientKey } from "@/lib/rateLimit";
 import { FR_BASE, frHeaders, frConfigured } from "@/lib/fr";
+import { logWarn, logDebug } from "@/lib/log.mjs";
 
 // Anti-duplicado al registrar una persona. PÚBLICO: el formulario manda la foto
 // (data URL ya reducida en el cliente) y aquí la reenviamos al FR-API con la
@@ -20,7 +21,9 @@ export async function POST(req: Request) {
   try {
     photo = (await req.json())?.photo || "";
   } catch {
-    /* body inválido */
+    // Body malformado = error del cliente. Sólo en debug y SIN el body (la foto
+    // es PII): no amplificamos logs con requests basura, pero queda traza opcional.
+    logDebug("fr_check_bad_json", { scope: "api.fr.check-duplicate" });
   }
   const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(photo);
   if (!m) return NextResponse.json({ ok: true, possible_duplicate: false });
@@ -40,7 +43,10 @@ export async function POST(req: Request) {
       status: r.status,
       headers: { "content-type": "application/json" },
     });
-  } catch {
+  } catch (err) {
+    // Asistivo: nunca bloquea el registro (degradamos a "sin duplicado"). Pero SÍ
+    // dejamos rastro del FR caído: sin este log el anti-duplicado se apaga en silencio.
+    logWarn("fr_proxy_failed", { scope: "api.fr.check-duplicate" }, err);
     return NextResponse.json({ ok: true, possible_duplicate: false, error: "fr_unreachable" });
   }
 }
