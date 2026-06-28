@@ -4,20 +4,9 @@ import {
   SECURITY_HEADERS,
   API_SECURITY_HEADERS,
   API_CORS_HEADERS,
-  contentSecurityPolicy,
 } from "./src/lib/apiPolicy.mjs";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
-
-// CSP. Por defecto se ENFORZA; con CSP_REPORT_ONLY=1 se emite como Report-Only
-// para validar en staging sin romper (recomendado en el primer despliegue: ver
-// la consola por violaciones de map/forms/GA//docs antes de enforzar).
-const CSP_HEADER = {
-  key: process.env.CSP_REPORT_ONLY === "1"
-    ? "Content-Security-Policy-Report-Only"
-    : "Content-Security-Policy",
-  value: contentSecurityPolicy(),
-};
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -35,9 +24,8 @@ const nextConfig: NextConfig = {
   // también para el sitio HTML; el lockdown de Permissions-Policy va sólo a /api.
   async headers() {
     return [
-      // CSP + headers base en todo el sitio. En /api el CSP es inerte para el
-      // fetch programático (no estorba) y evitamos un `source` con regex frágil.
-      { source: "/:path*", headers: [...SECURITY_HEADERS, CSP_HEADER] },
+      // Security headers base en todo el sitio. CSP lo emite el middleware.
+      { source: "/:path*", headers: SECURITY_HEADERS },
       { source: "/api/:path*", headers: API_SECURITY_HEADERS },
       // CORS del API público v1. El split lectura/escritura lo enforza el browser
       // (preflight), no nuestro código — ver API_CORS_HEADERS en apiPolicy.mjs.
