@@ -1,16 +1,35 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { contentSecurityPolicy } from "./src/lib/apiPolicy.mjs";
 
-// Keeps the auth session fresh on the gated areas (admin panel + the dedup
-// review console). Scoped to those paths so public pages stay fast and
-// untouched.
+const CSP_KEY =
+  process.env.CSP_REPORT_ONLY === "1"
+    ? "Content-Security-Policy-Report-Only"
+    : "Content-Security-Policy";
+const CSP_VALUE = contentSecurityPolicy();
+
+function applyCSP(res: NextResponse) {
+  res.headers.set(CSP_KEY, CSP_VALUE);
+  return res;
+}
+
+// Sets CSP on every HTML route. Also keeps the auth session fresh on gated
+// areas (admin panel + dedup review console).
 export async function middleware(req: NextRequest) {
+  const isGated =
+    req.nextUrl.pathname.startsWith("/admin") ||
+    req.nextUrl.pathname.startsWith("/deduplicar");
+
+  if (!isGated) {
+    return applyCSP(NextResponse.next({ request: req }));
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  let res = NextResponse.next({ request: req });
+  let res = applyCSP(NextResponse.next({ request: req }));
   if (!url || !key) return res;
 
   const supabase = createServerClient(url, key, {
@@ -20,7 +39,7 @@ export async function middleware(req: NextRequest) {
       },
       setAll(toSet) {
         toSet.forEach(({ name, value }) => req.cookies.set(name, value));
-        res = NextResponse.next({ request: req });
+        res = applyCSP(NextResponse.next({ request: req }));
         toSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
       },
     },
@@ -30,4 +49,6 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/admin/:path*", "/deduplicar/:path*"] };
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon\\.ico).*)"],
+};
