@@ -44,8 +44,14 @@ next-env.d.ts
 # Design specs (local reference, not part of the app)
 /specs/
 
-# Local DB backups (contain PII — never commit)
+# Local DB backups / exports (contain PII — never commit)
 backups/
+db_hazlo-hoy-org/
+
+# Local agent/skill tooling (not part of the app)
+.agents/
+.claude/skills/
+skills-lock.json
 
 # Alternate package-manager lockfiles — npm (package-lock.json) is canonical
 pnpm-lock.yaml

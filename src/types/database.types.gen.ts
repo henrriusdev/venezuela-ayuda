@@ -30,6 +30,51 @@ export type Database = {
         }
         Relationships: []
       }
+      // Hand-added for 202606280002_dedupe_reviewers_and_locks (the /deduplicar
+      // reviewer allowlist + per-group locks). A fresh `npm run types:*` after
+      // applying the migration to the introspected DB will include them.
+      reviewer_emails: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          email: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          email: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
+      group_locks: {
+        Row: {
+          expires_at: string
+          group_id: string
+          locked_at: string
+          locked_by: string
+          locked_by_email: string | null
+        }
+        Insert: {
+          expires_at: string
+          group_id: string
+          locked_at?: string
+          locked_by: string
+          locked_by_email?: string | null
+        }
+        Update: {
+          expires_at?: string
+          group_id?: string
+          locked_at?: string
+          locked_by?: string
+          locked_by_email?: string | null
+        }
+        Relationships: []
+      }
       api_partners: {
         Row: {
           active: boolean
@@ -910,6 +955,31 @@ export type Database = {
       rate_limit_hit: {
         Args: { p_key: string; p_limit: number; p_window_sec: number }
         Returns: { allowed: boolean; retry_after: number }[]
+      }
+      // Hand-added for 202606280002_dedupe_reviewers_and_locks (group locks for
+      // the /deduplicar console). A fresh `npm run types:*` after applying the
+      // migration to the introspected DB will include them automatically.
+      claim_group_lock: {
+        Args: {
+          p_group_id: string
+          p_user_id: string
+          p_email: string
+          p_ttl_seconds?: number
+        }
+        Returns: boolean
+      }
+      release_group_lock: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      active_group_locks: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          group_id: string
+          locked_by: string
+          locked_by_email: string | null
+          expires_at: string
+        }[]
       }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }

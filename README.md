@@ -148,6 +148,43 @@ este repo ya trae `supabase/config.toml` configurado para usar `54331`-`54334`.
 - `node scripts/backup-db.mjs` genera un backup JSON local de todas las tablas en
   `backups/` (en `.gitignore` — contiene datos privados, **nunca** se commitea).
 
+### Consola de deduplicación (`/deduplicar`)
+
+`/deduplicar` es la consola donde los revisores resuelven grupos de registros
+posiblemente duplicados (`GRP-xxxxx`) que sirve la API externa de dedup. Varios
+revisores trabajan la misma cola, así que cada grupo se **bloquea** mientras
+alguien lo revisa para que dos personas no dupliquen el trabajo.
+
+Para habilitarla en tu entorno:
+
+1. **Variables**: define `NEXT_PUBLIC_DEDUPE_API_URL` y `SUPABASE_SECRET_KEY` en
+   `.env.local` (ver `.env.example`). El secret key es obligatorio: las
+   escrituras de revisión y los locks van por el servidor.
+2. **Migración**: aplica `supabase/migrations/202606280002_dedupe_reviewers_and_locks.sql`
+   en el SQL editor de Supabase (en local se auto-aplica al pushear a `main`).
+   Crea dos cosas:
+   - `reviewer_emails` — allowlist de quién puede entrar (mismo patrón que
+     `admin_emails`: sin policies → RLS lo cierra, solo el servidor lo lee).
+   - `group_locks` — un "claim" por grupo, con `expires_at` para que un lock se
+     libere solo si el revisor cierra la pestaña sin soltarlo.
+3. **Alta de revisor**: inserta tu correo en la allowlist y luego regístrate en
+   `/deduplicar` para crear contraseña (mismo flujo de "primera vez" que
+   `/admin`). Un correo que no esté en `reviewer_emails` se rechaza tras el login.
+
+   ```sql
+   insert into reviewer_emails (email, added_by)
+     values ('tu-correo@ejemplo.com', 'manual')
+     on conflict (email) do nothing;
+   ```
+
+**Cómo funcionan los locks.** Al abrir un grupo, la consola llama
+`claim_group_lock(group_id, user_id, email, ttl)`, que toma el lock de forma
+atómica (un `select ... for update` serializa a los revisores que compiten por el
+mismo grupo, así que solo uno gana). Mientras la pestaña esté viva manda un
+*heartbeat* que renueva el lock antes de que expire (`LOCK_TTL_SECONDS = 180s`);
+si la pestaña se cierra o congela, el lock caduca y otro revisor puede tomarlo.
+`release_group_lock` lo suelta al salir del grupo (solo si es tuyo).
+
 ## Contribuir
 
 Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar

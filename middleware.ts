@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Keeps the admin auth session fresh. Scoped to /admin only so public pages
-// stay fast and untouched.
+// Keeps the auth session fresh on the gated areas (admin panel + the dedup
+// review console). Scoped to those paths so public pages stay fast and
+// untouched.
 export async function middleware(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
@@ -29,4 +30,4 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/deduplicar/:path*"] };
