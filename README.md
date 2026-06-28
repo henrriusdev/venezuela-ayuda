@@ -114,8 +114,12 @@ node --test scripts/dedup-lib.test.mjs
 
 ## Contribuir
 
-Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar
-—desarrollo, datos, difusión o verificación de información— escríbenos a
-**[hola@maw.dev](mailto:hola@maw.dev)**.
+Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar: 
+- Antes de abrir una issue o pull request, lee [CONTRIBUTING.md](CONTRIBUTING.md).
+- El proyecto usa un flujo fork-first para contribuciones externas, plantilla de PRs
+y reglas estrictas para no publicar datos personales o sensibles en GitHub.
+
+Para vulnerabilidades o fugas de datos, escribe a
+**[hola@maw.dev](mailto:hola@maw.dev)** con el asunto `[Seguridad] venezuela-ayuda`.
 
 Hecho con cariño para Venezuela. 🇻🇪
