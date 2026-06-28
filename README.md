@@ -187,8 +187,12 @@ si la pestaña se cierra o congela, el lock caduca y otro revisor puede tomarlo.
 
 ## Contribuir
 
-Este es un proyecto comunitario y sin fines de lucro. Si quieres colaborar
-—desarrollo, datos, difusión o verificación de información— escríbenos a
-**[hola@maw.dev](mailto:hola@maw.dev)**.
+Antes de abrir una issue o pull request, lee [CONTRIBUTING.md](CONTRIBUTING.md).
+
+El flujo es **issue → rama de trabajo → PR contra `staging` → QA → `main`**. Para
+contribuciones externas, usa fork + PR contra `staging` (nunca contra `main`).
+
+Para vulnerabilidades o fugas de datos, sigue [SECURITY.md](SECURITY.md) o escribe a
+**[hola@maw.dev](mailto:hola@maw.dev)** con el asunto `[Seguridad] venezuela-ayuda`.
 
 Hecho con cariño para Venezuela. 🇻🇪
