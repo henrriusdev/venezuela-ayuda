@@ -13,7 +13,7 @@ function applyCSP(res: NextResponse) {
   return res;
 }
 
-// Sets CSP on every HTML route. Also keeps the auth session fresh on gated
+// Sets CSP on HTML pages. Also keeps the auth session fresh on gated
 // areas (admin panel + dedup review console).
 export async function middleware(req: NextRequest) {
   const isGated =
@@ -50,5 +50,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico).*)"],
+  // HTML pages only — skip static assets, API routes, images, and manifests.
+  matcher: ["/((?!_next/static|_next/image|api/|.*\\.(?:ico|webmanifest|xml|txt|png|jpg|jpeg|svg|webp|js|css|woff2?)).*)"],
 };
